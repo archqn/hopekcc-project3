@@ -191,6 +191,8 @@ from rest_framework import viewsets, status, exceptions
 from rest_framework.response import Response
 from django.db import transaction
 import logging
+import os
+directory = r"C:\Users\uclam\Downloads\Lucas"
 
 logger = logging.getLogger(__name__)
 
@@ -216,24 +218,48 @@ class FileViewSet(viewsets.ModelViewSet):
         if not project_id:
             return Response({'error': 'Project ID is required'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # The permission class will handle ownership check
+        try:
+            project = Project.objects.get(id=project_id)
+        except Project.DoesNotExist:
+            return Response({'error': 'Project not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Create the project directory using the project name
+        project_folder = os.path.join(directory, project.name)
+        try:
+            if not os.path.exists(project_folder):
+                os.makedirs(project_folder)
+                logger.info(f"Directory created: {project_folder}")
+        except Exception as e:
+            logger.error(f"Error creating project directory: {str(e)}")
+            return Response({'error': 'Error creating project directory'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         try:
-            file_url = upload_file_to_gcs(file, project_id)
+            # Save the file to the project folder
+            file_path = os.path.join(project_folder, file.name)
+            with default_storage.open(file_path, 'wb+') as destination:
+                for chunk in file.chunks():
+                    destination.write(chunk)
+
+            # Build the file URL (in this case, just the file path)
+            file_url = file_path
             
+            # Save the file information in the database
             serializer = self.get_serializer(data={
                 'project': project_id,
                 'file_name': file.name,
-                'file_url': file_url
+                'file_url': file_url  # Save the local path in the database
             })
             serializer.is_valid(raise_exception=True)
             self.perform_create(serializer)
             headers = self.get_success_headers(serializer.data)
             logger.info(f"File created: {serializer.data['file_name']} for project {project_id}")
             return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
         except Exception as e:
             logger.error(f"Error creating file: {str(e)}")
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        
 
     def retrieve(self, request, *args, **kwargs):
         # additionally fetch the content files in detail view
@@ -296,12 +322,14 @@ class FileViewSet(viewsets.ModelViewSet):
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 '''
-CRUD projects
+CRUD 
     view for changing project title --> file editor
     view for changing project description --> file editor
     view for deleting project --> file editor
     view for creating project --> file editor
 '''
+
+
 class ProjectViewSet(viewsets.ModelViewSet):
     """
     This ViewSet automatically provides `list`, `create`, `update` and `destroy` actions.
@@ -323,7 +351,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsProjectOwner]
     def list(self, request, *args, **kwargs):
-        logger.info("list called")
+
         user, token = authenticate(request)
         if not user:
             return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=401)
@@ -335,7 +363,51 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
         # Use the serializer to convert the queryset to JSON
         serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+        project_data = serializer.data
+
+        try:
+            files_and_folders = os.listdir(directory)
+            directory_contents = [
+                {"name": item, "is_directory": os.path.isdir(os.path.join(directory, item))}
+                for item in files_and_folders
+            ]
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': 'Error accessing directory'}, status=500)
+        
+        return Response(directory_contents)
+    
+    def create(self, request, *args, **kwargs):
+
+        # Authenticate user
+        user, token = authenticate(request)
+        if not user:
+            return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=401)
+
+        # Parse incoming data
+        data = request.data.copy()
+        project_title = data.get('name')  # Assuming the title is stored under 'name'
+        data['auth0_user_id'] = user.get('sub')  # Add Auth0 user ID to the data
+
+        # Create folder in local directory
+        project_folder_path = os.path.join(directory, project_title)
+
+        try:
+            # Check if the folder already exists
+            if not os.path.exists(project_folder_path):
+                os.makedirs(project_folder_path)
+            else:
+                return JsonResponse({'status': 'error', 'message': 'Directory already exists'}, status=400)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': 'Error creating directory'}, status=500)
+
+        # Use the serializer to validate and save the project
+        serializer = self.get_serializer(data=data)
+        if serializer.is_valid(raise_exception=True):
+            self.perform_create(serializer)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
    
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
