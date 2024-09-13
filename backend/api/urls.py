@@ -27,6 +27,10 @@ Project_detail = ProjectViewSet.as_view({
     'delete': 'destroy'
 })
 
+Project_list_dynamic = ProjectViewSet.as_view({
+    'get': 'list_dynamic'
+})
+
 # #----unused
 # user_list = UserViewSet.as_view({
 #     'get': 'list'
@@ -39,6 +43,7 @@ Project_detail = ProjectViewSet.as_view({
 urlpatterns = [
     path('projects/', Project_list, name='project-list'),
     path('projects/<int:pk>/', Project_detail, name='project-detail'),
+    path('projects/list_dynamic/', Project_list_dynamic, name='project-list-dynamic'),
     path('files/', File_list, name='file-list'),
     path('files/<int:pk>/', File_detail, name='file-detail'),
 

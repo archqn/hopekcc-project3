@@ -6,6 +6,8 @@ import NewProject from "./pages/NewProject";
 import ProjectDetails from "./pages/ProjectDetails";
 import ProjectEditorContainer from "./pages/EditProject";
 import Footer from "./components/Footer";
+import MonacoEditProject from "./pages/MonacoEditProject";
+import ProjectFilesPage from "./pages/ProjectFilesPage";
 
 function App() {
   return (
@@ -18,8 +20,11 @@ function App() {
             <Routes>
               <Route path="" element={<Home />} />
               <Route path="/new-project" element={<NewProject />} />
+              <Route path="/projects/:name" element={<ProjectFilesPage />} />
               <Route path="/projects/:id" element={<ProjectDetails />} />
               <Route path="/edit-project/:id" element={<ProjectEditorContainer />} />
+              <Route path="/monaco-edit-project" element={<MonacoEditProject />} />
+              
               <Route path="*" element={<div>Page Not Found</div>} />
             </Routes>
           </main>

@@ -39,7 +39,7 @@ const ProjectList = ({ projects, isLoading }: ProjectListProps) => {
       <div className="grid grid-cols-12 gap-4 items-center py-3 hover:bg-gray-50 rounded-md transition-colors duration-150">
         <div className="col-span-3">
           <h3 className="text-left font-medium text-blue-800 hover:underline truncate">
-            <Link to={`/projects/${project.id}`}>{project.name}</Link>
+            <Link to={`/projects/${project.name}`}>{project.name}</Link>
           </h3>
         </div>
         <div className="col-span-4 text-sm text-left text-gray-500 truncate">
@@ -91,7 +91,7 @@ const Home = () => {
     // Get the Auth0 token
     const token = await getAccessTokenSilently();
     // console.log("Generated token: ", token);
-    const response = await axios.get("http://127.0.0.1:8000/api/projects/", {
+    const response = await axios.get("http://127.0.0.1:8000/api/projects/list_dynamic/", {
       headers: {
         Authorization: `Bearer ${token}`,
       },

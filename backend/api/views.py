@@ -376,6 +376,35 @@ class ProjectViewSet(viewsets.ModelViewSet):
         
         return Response(directory_contents)
     
+
+    def list_dynamic(self, request, *args, **kwargs):
+        """
+        New version of list that takes directory as input dynamically
+        """
+        # Get the directory path from the query parameters
+        directory = request.query_params.get('directory')
+
+        # If no directory is provided, use a default static directory for testing
+        if not directory:
+            directory = r"C:\Users\uclam\Downloads\Lucas"  # Default directory
+
+        try:
+            # Check if the provided directory exists
+            if not os.path.exists(directory):
+                return Response({'status': 'error', 'message': 'Directory does not exist'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # List all files and directories for the provided directory
+            files_and_folders = os.listdir(directory)
+            directory_contents = [
+                {"name": item, "is_directory": os.path.isdir(os.path.join(directory, item))}
+                for item in files_and_folders
+            ]
+        except Exception as e:
+            return Response({'status': 'error', 'message': f'Error accessing directory: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # Return the directory contents
+        return Response(directory_contents, status=status.HTTP_200_OK)
+    
     def create(self, request, *args, **kwargs):
 
         # Authenticate user
@@ -408,6 +437,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+
+
+
    
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
