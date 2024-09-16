@@ -21,9 +21,9 @@ function App() {
               <Route path="" element={<Home />} />
               <Route path="/new-project" element={<NewProject />} />
               <Route path="/projects/:name" element={<ProjectFilesPage />} />
-              <Route path="/projects/:id" element={<ProjectDetails />} />
-              <Route path="/edit-project/:id" element={<ProjectEditorContainer />} />
-              <Route path="/monaco-edit-project" element={<MonacoEditProject />} />
+              <Route path="/projects/:id" element={<ProjectDetails />} /> // remove
+              <Route path="/edit-project/:id" element={<ProjectEditorContainer />} /> // change
+              <Route path="/monaco-edit-project" element={<MonacoEditProject />} /> // not needed
               
               <Route path="*" element={<div>Page Not Found</div>} />
             </Routes>

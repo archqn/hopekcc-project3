@@ -6,7 +6,6 @@ from .forms import ProjectForm, FileForm
 from .models import Project, File
 from django.contrib.auth.models import User 
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
 import json
 from firebase_admin import storage
 import requests
@@ -189,9 +188,13 @@ from .serializers import ProjectSerializer, FileSerializer
 from .permissions import IsProjectOwner
 from rest_framework import viewsets, status, exceptions
 from rest_framework.response import Response
+from django.http import JsonResponse
 from django.db import transaction
 import logging
 import os
+import shutil
+from rest_framework.decorators import action
+
 directory = r"C:\Users\uclam\Downloads\Lucas"
 
 logger = logging.getLogger(__name__)
@@ -382,6 +385,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         New version of list that takes directory as input dynamically
         """
         # Get the directory path from the query parameters
+
         directory = request.query_params.get('directory')
 
         # If no directory is provided, use a default static directory for testing
@@ -407,7 +411,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
     
     def create(self, request, *args, **kwargs):
 
-        # Authenticate user
         user, token = authenticate(request)
         if not user:
             return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=401)
@@ -415,7 +418,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         # Parse incoming data
         data = request.data.copy()
         project_title = data.get('name')  # Assuming the title is stored under 'name'
-        data['auth0_user_id'] = user.get('sub')  # Add Auth0 user ID to the data
+        # data['auth0_user_id'] = user.get('sub')  # Add Auth0 user ID to the data
 
         # Create folder in local directory
         project_folder_path = os.path.join(directory, project_title)
@@ -436,9 +439,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-
-
 
    
     def retrieve(self, request, *args, **kwargs):
@@ -477,7 +477,89 @@ class ProjectViewSet(viewsets.ModelViewSet):
             message += " ".join(gcs_deletion_errors)
         logger.info(message)
         return Response({"message": message}, status=status.HTTP_200_OK)
+    
+@csrf_exempt
+def upload(request):
+    """
+    Handle both file and folder uploads.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
 
+    # Parse project and upload data from the POST request
+    project_name = request.POST.get('project')  # Using request.POST for form data
+    if not project_name:
+        return JsonResponse({'status': 'error', 'message': 'Project name is required'}, status=400)
+
+    project_path = os.path.join(directory, project_name)
+
+    # Check if project directory exists
+    if not os.path.exists(project_path):
+        return JsonResponse({'status': 'error', 'message': 'Project directory does not exist'}, status=400)
+
+    # Check if files/folders are being uploaded
+    files = request.FILES.getlist('file')  # Using request.FILES for file uploads
+
+    if not files:
+        return JsonResponse({'status': 'error', 'message': 'No files provided'}, status=400)
+
+    try:
+        # Handle each file
+        for file in files:
+            file_path = os.path.join(project_path, file.name)
+
+            # Save file in the project directory
+            with open(file_path, 'wb+') as destination:
+                for chunk in file.chunks():
+                    destination.write(chunk)
+
+        return JsonResponse({'message': 'Files uploaded successfully'}, status=201)
+
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': f'Error uploading files: {str(e)}'}, status=500)
+
+@csrf_exempt
+def upload_folder(request):
+    """
+    Handle folder uploads, replicating folder structure on the server.
+    """
+    # Authenticate user
+    user = authenticate(request)
+    if not user:
+        return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=401)
+
+    project_name = request.POST.get('project')
+    if not project_name:
+        return JsonResponse({'status': 'error', 'message': 'Project name is required'}, status=400)
+    
+    project_path = os.path.join(directory, project_name)
+    if not os.path.exists(project_path):
+        return JsonResponse({'status': 'error', 'message': 'Project directory does not exist'}, status=400)
+    
+    files = request.FILES.getlist('files')
+    paths = request.POST.getlist('paths')
+    if not files or not paths or len(files) != len(paths):
+        return JsonResponse({'status': 'error', 'message': 'No files provided'}, status=400)
+    
+
+    try:
+        # Save each file, maintaining folder structure (if the folder structure is passed with file name)
+        for file, relative_path in zip(files, paths):
+            file_path = os.path.join(project_path, relative_path)
+
+
+            # Create necessary directories
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+
+            # Save the file
+            with open(file_path, 'wb+') as destination:
+                for chunk in file.chunks():
+                    destination.write(chunk)
+
+        return JsonResponse({'message': 'Folder and files uploaded successfully'}, status=201)
+
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': f'Error uploading folder: {str(e)}'}, status=500)
 
 
 # Auth0 implementation in everything
