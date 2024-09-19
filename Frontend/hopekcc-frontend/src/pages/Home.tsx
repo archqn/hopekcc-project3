@@ -34,7 +34,29 @@ const ProjectList = ({ projects, isLoading }: ProjectListProps) => {
     );
   };
   const ProjectItem = ({ project }: { project: Project }) => {
-    const { handleProjectDelete } = useProjectOperations(project.id);
+    const handleProjectDelete = async (name: string) => {
+      if (!window.confirm(`Are you sure you want to delete the project: ${name}?`)) {
+        return;
+      }
+    
+      try {
+        const response = await axios.delete("http://127.0.0.1:8000/api/projects/delete/", {
+          data: {
+            name: name,  // Pass the directory in query parameters
+          }
+        });
+    
+        if (response.status === 200) {
+          alert("Project deleted successfully.");
+          window.location.reload();  // Refresh the page to update the project list
+        } else {
+          console.error("Failed to delete project:", response.data);
+        }
+      } catch (error) {
+        console.error("Error deleting project:", error);
+        alert("Error deleting project.");
+      }
+    };
     return (
       <div className="grid grid-cols-12 gap-4 items-center py-3 hover:bg-gray-50 rounded-md transition-colors duration-150">
         <div className="col-span-3">
@@ -55,7 +77,7 @@ const ProjectList = ({ projects, isLoading }: ProjectListProps) => {
             {new Date(project.created_at).toLocaleDateString()}
           </span>
         </div>
-        <DeleteButton onClick={handleProjectDelete} className="mx-2" />
+        <DeleteButton onClick={() => handleProjectDelete(project.name)} className="mx-2" />
       </div>
     );
   };
@@ -83,7 +105,13 @@ const Home = () => {
     isAuthenticated,
     isLoading: authLoading,
     getAccessTokenSilently,
+    user,
   } = useAuth0();
+
+  if (isAuthenticated && user) {
+    console.log("User email:", user.email); // Log the user's email
+  }
+  
   const [filteredProjects, setFilteredProjects] = useState<Project[]>([]); // search bar will filter results
   const [searchQuery, setSearchQuery] = useState<string>("");
   // Fetch projects using axios and Auth0 token
@@ -171,7 +199,7 @@ const Home = () => {
                 className="relative w-48 h-12 flex items-center justify-center group"
               >
                 {/* Light blue background */}
-                <div className="absolute inset-0 bg-[#a8e9fd] transition-transform duration-300 ease-in-out transform group-hover:scale-105 group-hover:skew-x-[10deg] group-hover:scale-105 group-hover:shadow-lg z-0"></div>
+                <div className="absolute inset-0 bg-[#a8e9fd] transition-transform duration-300 ease-in-out transform group-hover:skew-x-[10deg] group-hover:scale-105 group-hover:shadow-lg z-0"></div>
 
                 {/* Text */}
                 <div className="relative text-lg font-bold text-[#1d769f] transition-transform duration-300 ease-in-out transform group-hover:scale-105 z-10">

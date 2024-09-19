@@ -15,7 +15,7 @@ class IsProjectOwner(permissions.BasePermission):
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
             return True
-        
+        print(request.data)
         user, token = authenticate(request)
         auth0_user_id = user['sub']
         logger.info(f"Checking permission for user: {auth0_user_id}")

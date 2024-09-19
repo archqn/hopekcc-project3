@@ -2,8 +2,8 @@ from .views import *
 from django.urls import path
 from django.contrib import admin
 
-from .views import FileViewSet, ProjectViewSet
-
+from .views import ProjectViewSet
+'''
 File_list = FileViewSet.as_view({
     'get': 'list',
     'post': 'create'
@@ -14,6 +14,7 @@ File_detail = FileViewSet.as_view({
     'patch': 'partial_update',
     'delete': 'destroy'
 })
+'''
 
 Project_list = ProjectViewSet.as_view({
     'get': 'list',
@@ -24,7 +25,6 @@ Project_detail = ProjectViewSet.as_view({
     'get': 'retrieve',
     'put': 'update',
     'patch': 'partial_update',
-    'delete': 'destroy'
 })
 
 # new
@@ -32,6 +32,11 @@ Project_detail = ProjectViewSet.as_view({
 Project_list_dynamic = ProjectViewSet.as_view({
     'get': 'list_dynamic'
 })
+
+Project_delete = ProjectViewSet.as_view({
+    'delete': 'destroy'
+})
+
 
 
 # #----unused
@@ -51,10 +56,13 @@ urlpatterns = [
     # new
     path('projects/upload/', upload, name='project-upload-file'),
     path('projects/upload_folder/', upload_folder, name='project-upload-folder'),
+    path('projects/delete_folder/', delete_folder, name='project-delete-folder'),
+    path('projects/delete/', delete_project, name='project-delete-project'),
+    
 
     # old
-    path('files/', File_list, name='file-list'),
-    path('files/<int:pk>/', File_detail, name='file-detail'),
+    # path('files/', File_list, name='file-list'),
+    # path('files/<int:pk>/', File_detail, name='file-detail'),
 
     # path('create_project/', create_project, name='create_project'),
     # path('upload/<int:project_id>/', upload_file, name='upload_file'),

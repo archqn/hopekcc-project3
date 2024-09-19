@@ -1,6 +1,7 @@
 import { useParams } from "react-router-dom";
 import { useQuery } from "react-query";
 import axios from "axios";
+import { DeleteButton } from "../components/projectComponents/Buttons.tsx";
 
 const ProjectFilesPage = () => {
   const { name } = useParams();
@@ -19,7 +20,30 @@ const ProjectFilesPage = () => {
 
   const { data, isLoading, isError } = useQuery(["projectFiles", name], fetchProjectFiles);
 
-  
+  const handleDeleteFolder = async (folderName: string) => {
+    if (!window.confirm(`Are you sure you want to delete the folder: ${folderName}?`)) {
+      return;
+    }
+
+    try {
+      const response = await axios.post("http://127.0.0.1:8000/api/projects/delete_folder/", {
+        project: name, // The project name from the URL parameter
+        folder: folderName // The folder to delete
+      });
+
+      if (response.status === 200) {
+        alert("Folder deleted successfully.");
+        window.location.reload(); // Refresh the page to update the folder list
+      } else {
+        console.error("Failed to delete folder:", response.data);
+      }
+    } catch (error) {
+      console.error("Error deleting folder:", error);
+      alert("Error deleting folder.");
+    }
+  };
+
+  /*
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]; // Only handle the first file for now
     if (!file) return;
@@ -48,6 +72,7 @@ const ProjectFilesPage = () => {
       console.error("Error uploading file:", error);
     }
   };
+  */
 
   const handleFolderUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     console.log("Folder upload triggered");
@@ -101,6 +126,12 @@ const ProjectFilesPage = () => {
         {data.map((file: any, index: number) => (
           <li key={index}>
             {file.is_directory ? <b>{file.name}/</b> : file.name}
+            {file.is_directory && (
+              <DeleteButton
+              onClick={() => handleDeleteFolder(file.name)} // Use DeleteButton here
+              className="ml-2"
+            />
+          )}
           </li>
         ))}
       </ul>

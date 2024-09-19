@@ -48,133 +48,6 @@ def authenticate(request):
 from rest_framework.permissions import IsAuthenticated
 from .utils import upload_file_to_gcs, delete_file_from_gcs, get_file_content_from_gcs, update_file_in_gcs
 
-@csrf_exempt
-def list_user_projects(request):
-    if request.method == 'GET':
-        
-        user, token = authenticate(request)
-
-        if not user:
-            return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=401)
-
-        # Extract the Auth0 User ID from the decoded token
-        auth0_user_id = user.get('sub')  # Assuming 'sub' contains the Auth0 User ID
-
-        # Filter projects by the Auth0 User ID
-        user_projects = Project.objects.filter(auth0_user_id=auth0_user_id)
-        user_projects_data = list(user_projects.values('id', 'name', 'description', 'created_at', 'updated_at', 'auth0_user_id'))
-     
-        return JsonResponse({'projects': user_projects_data}, safe=False, status=200)
-
-    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
-
-
-# CONNECTED TO FRONTEND CREATE PROJECT PAGE
-@csrf_exempt
-def create_project(request):
-    if request.method == 'POST':
-        user, token = authenticate(request)
-        
-        data = json.loads(request.body)
-        form = ProjectForm(data)
-
-        if form.is_valid():
-            project = form.save(commit=False)
-            project.auth0_user_id = user.get('sub')
-            project.save()
-            return JsonResponse({'status': 'success', 'project_id': project.id}, status=201)
-
-        return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
-
-    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
-
-# NEEDS CONNECTING TO FRONTEND CODE EDITOR
-@csrf_exempt
-def upload_file(request, project_id):
-    project = get_object_or_404(Project, pk=project_id)
-
-    authenticate(request)
-
-    if request.method == 'POST' and 'file' in request.FILES:
-        file = request.FILES['file']
-        path = default_storage.save('uploads/' + file.name, ContentFile(file.read()))
-        file_url = default_storage.url(path)
-        File.objects.create(
-            project=project,
-            file_name=file.name,
-            file_url=file_url
-        )
-        return JsonResponse({'status': 'success', 'file_url': file_url}, status=201)
-    
-    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
-
-
-def get_project_details(request, project_id): # CONNECTED TO FRONTEND CODE EDITOR
-    project = get_object_or_404(Project, id=project_id)
-
-    user, token = authenticate(request)
-    if user.get('sub')!= project.auth0_user_id: 
-        return JsonResponse({'status': 'error', 'message': 'This isn\'t your project'}, status=405)
-
-    # Placeholder for Auth0 user check
-    # temp_user = User.objects.get(username='temp_user')  # Replace with actual Auth0 check
-    # if project.auth0_user_id != temp_user:
-    #     return JsonResponse({'error': 'Unauthorized action'}, status=403)
-
-    files = project.files.all()
-    files_data = []
-
-    bucket = storage.bucket()
-    
-    for file in files:
-        file_content = None
-        
-        file_path = file.file_url.split(bucket.name + '/')[1].split('?')[0] 
-        blob = bucket.blob(file_path)
-
-        if blob.exists():
-            file_content = blob.download_as_text()
-            files_data.append({
-                'id': file.id,
-                'file_name': file.file_name,
-                'content': file_content,
-            })
-
-    project_data = {
-        'id': project.id,
-        'project_name': project.name,
-        'project_description': project.description,
-        'files': files_data,
-        'auth0_user_id' : project.auth0_user_id
-    }
-
-    return JsonResponse(project_data)
-
-@csrf_exempt
-def delete_file(request, project_id, file_id): # CONNECTED TO FRONTEND CODE EDITOR
-    project = get_object_or_404(Project, id=project_id)
-    file = get_object_or_404(File, id=file_id, project=project)
-    
-    authenticate(request)
-    
-    # Delete the file from Google Cloud Storage
-    bucket = storage.bucket()
-    file_path = file.file_url.split(bucket.name + '/')[1].split('?')[0]  # Extract path
-    blob = bucket.blob(file_path)
-    blob.delete()  # This deletes the file from Google Cloud Storage
-    
-    # Delete the file record from the database
-    file.delete()
-    
-    return JsonResponse({'success': True})
-
-# for testing DJANGO backend view only
-def display_user_projects_home(request):
-    # # Placeholder for Auth0 user check
-    # authenticate
-    projects = Project.objects
-    return render(request, 'api/home.html', {'projects': projects})
-
 
 '''
 #CRUD files
@@ -198,7 +71,7 @@ from rest_framework.decorators import action
 directory = r"C:\Users\uclam\Downloads\Lucas"
 
 logger = logging.getLogger(__name__)
-
+'''
 class FileViewSet(viewsets.ModelViewSet):
     """
     This ViewSet provides `list`, `create`, `retrieve`,
@@ -324,14 +197,14 @@ class FileViewSet(viewsets.ModelViewSet):
             logger.error(f"Error deleting file: {str(e)}")
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-'''
+"""
 CRUD 
     view for changing project title --> file editor
     view for changing project description --> file editor
     view for deleting project --> file editor
     view for creating project --> file editor
+"""
 '''
-
 
 class ProjectViewSet(viewsets.ModelViewSet):
     """
@@ -359,7 +232,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         if not user:
             return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=401)
         
-        auth0_user_id = user.get('sub')  # Assuming 'sub' contains the Auth0 User ID
+        auth0_user_id = user.get('sub')  # 'sub' contains the Auth0 User ID
         
         # Filter projects by the Auth0 User ID
         queryset = Project.objects.filter(auth0_user_id=auth0_user_id)
@@ -439,8 +312,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
 
-   
+
+
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
@@ -448,35 +323,32 @@ class ProjectViewSet(viewsets.ModelViewSet):
         # The related files are already included in the serializer
         return Response(data)
     
+
+    # new - doesnt work
     @transaction.atomic
     def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        project_id = instance.id
+        """
+        Deletes a project based on the directory path passed in query parameters.
+        """
+        # Get the directory from query parameters
+        project_name = request.query_params.get('name')
 
-        # Get all related files
-        related_files = File.objects.filter(project_id=project_id)
+        # Check if directory is provided
+        if not project_name:
+            return Response({'status': 'error', 'message': 'project name is required'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Delete files from Google Cloud Storage
-        gcs_deletion_errors = []
-        for file in related_files:
-            try:
-                delete_file_from_gcs(file.file_url)
-            except Exception as e:
-                gcs_deletion_errors.append(f"Error deleting {file.file_name} from GCS: {str(e)}")
+        project_directory = os.path.join(directory, project_name)
+        # Check if the directory exists
+        if not os.path.exists(project_directory):
+            return Response({'status': 'error', 'message': 'Project directory does not exist'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Delete related files from the database
-        deletion_count = related_files.delete()[0]
-
-        # Delete the project
-        self.perform_destroy(instance)
-
-        # Prepare response message
-        message = f"Project {project_id} and {deletion_count} related files have been deleted successfully."
-        if gcs_deletion_errors:
-            message += " However, there were issues deleting some files from Google Cloud Storage:"
-            message += " ".join(gcs_deletion_errors)
-        logger.info(message)
-        return Response({"message": message}, status=status.HTTP_200_OK)
+        try:
+            # Remove the directory and its contents
+            shutil.rmtree(project_directory)
+            return Response({'status': 'success', 'message': f'Project directory {project_directory} deleted successfully'}, status=status.HTTP_200_OK)
+        
+        except Exception as e:
+            return Response({'status': 'error', 'message': f'Error deleting project directory: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
 @csrf_exempt
 def upload(request):
@@ -560,6 +432,72 @@ def upload_folder(request):
 
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': f'Error uploading folder: {str(e)}'}, status=500)
+    
+@csrf_exempt
+def delete_folder(request):
+    try:
+        # Parse JSON data from the request body
+        data = json.loads(request.body)
+        project_name = data.get('project')
+        folder_name = data.get('folder')
+    except json.JSONDecodeError:
+        return JsonResponse({'status': 'error', 'message': 'Invalid JSON data'}, status=400)
+
+    # Validate input
+    if not project_name or not folder_name:
+        return JsonResponse({'status': 'error', 'message': 'Project and folder name are required'}, status=400)
+
+    # Construct the full folder path
+    directory = r"C:\Users\uclam\Downloads\Lucas"  # Update this to your root directory if needed
+    project_path = os.path.join(directory, project_name)
+    full_folder_path = os.path.join(project_path, folder_name)
+
+    # Check if the folder exists
+    if not os.path.exists(full_folder_path):
+        return JsonResponse({'status': 'error', 'message': 'Folder does not exist'}, status=400)
+
+    try:
+        # Remove the folder and its contents
+        shutil.rmtree(full_folder_path)
+        return JsonResponse({'status': 'success', 'message': 'Folder deleted successfully'}, status=200)
+
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': f'Error deleting folder: {str(e)}'}, status=500)
+    
+@csrf_exempt
+def delete_project(request):
+    """
+    Deletes a project based on the name passed in the request body as JSON.
+    """
+    if request.method != 'DELETE':
+        return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
+
+    try:
+        # Parse the JSON body to get the project name
+        data = json.loads(request.body)
+        project_name = data.get('name')
+    except json.JSONDecodeError:
+        return JsonResponse({'status': 'error', 'message': 'Invalid JSON data'}, status=400)
+
+    # Validate input
+    if not project_name:
+        return JsonResponse({'status': 'error', 'message': 'Project name is required'}, status=400)
+
+    # Construct the full project directory path (replace with your base directory)
+    base_directory = r"C:\Users\uclam\Downloads\Lucas"  # Replace with your actual base directory
+    project_directory = os.path.join(base_directory, project_name)
+
+    # Check if the project directory exists
+    if not os.path.exists(project_directory):
+        return JsonResponse({'status': 'error', 'message': 'Project directory does not exist'}, status=400)
+
+    try:
+        # Delete the project directory and its contents
+        shutil.rmtree(project_directory)
+        return JsonResponse({'status': 'success', 'message': f'Project {project_name} deleted successfully'}, status=200)
+
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': f'Error deleting project: {str(e)}'}, status=500)
 
 
 # Auth0 implementation in everything
