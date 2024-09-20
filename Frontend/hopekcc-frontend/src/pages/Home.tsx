@@ -2,13 +2,11 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import { useQuery } from "react-query";
-import { useAuth0 } from "@auth0/auth0-react";
 import { Clock, Calendar } from "lucide-react";
 import { Project } from "../utils/types.ts";
 import {
   DeleteButton,
 } from "../components/projectComponents/Buttons.tsx";
-import { useProjectOperations } from "../utils/api.ts";
 import SearchBar from "../components/SearchBar.tsx";
 interface ProjectListProps {
   projects: Project[];
@@ -101,24 +99,13 @@ const ProjectList = ({ projects, isLoading }: ProjectListProps) => {
 };
 
 const Home = () => {
-  const {
-    isAuthenticated,
-    isLoading: authLoading,
-    getAccessTokenSilently,
-    user,
-  } = useAuth0();
-
-  if (isAuthenticated && user) {
-    console.log("User email:", user.email); // Log the user's email
-  }
+  
   
   const [filteredProjects, setFilteredProjects] = useState<Project[]>([]); // search bar will filter results
   const [searchQuery, setSearchQuery] = useState<string>("");
   // Fetch projects using axios and Auth0 token
   const fetchProjects = async (): Promise<Project[]> => {
-    // Get the Auth0 token
-    const token = await getAccessTokenSilently();
-    // console.log("Generated token: ", token);
+    const token = "proxy token";
     const response = await axios.get("http://127.0.0.1:8000/api/projects/list_dynamic/", {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -137,13 +124,6 @@ const Home = () => {
       },
     }
   );
-
-  if (authLoading) {
-    return <div>Loading authentication...</div>;
-  }
-  if (!isAuthenticated) {
-    return <div>Please log in to view your projects.</div>;
-  }
   // if (isLoading) {
   //   return <div>Loading projects...</div>;
   // }
@@ -226,3 +206,4 @@ const Home = () => {
 };
 
 export default Home;
+
