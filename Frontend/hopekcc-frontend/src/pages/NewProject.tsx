@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../components/projectComponents/Buttons";
-import { useAuth0 } from "@auth0/auth0-react";
 import axios from "axios";
 import { useMutation, useQueryClient } from "react-query";
 
@@ -64,24 +63,17 @@ const NewProject: React.FC = () => {
   const [projectName, setProjectName] = useState("");
   const [projectDescription, setProjectDescription] = useState("");
   const navigate = useNavigate();
-  const { getAccessTokenSilently, user } = useAuth0();
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
   const createProject = async (projectData: {
     name: string;
     description: string;
-    auth0_user_id: string;
+    directory: string;
   }) => {
-    const token = await getAccessTokenSilently();
+    // const token = await getAccessTokenSilently();
     const response = await axios.post(
       "http://127.0.0.1:8000/api/projects/",
-      projectData,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      }
+      projectData
     );
     return response.data;
   };
@@ -97,19 +89,14 @@ const NewProject: React.FC = () => {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (user && user.sub) {
-      try {
-        mutation.mutate({
-          name: projectName,
-          description: projectDescription,
-          auth0_user_id: user.sub,
-        });
-      } catch (e: any) {
-        setError(e.message);
-      }
-    } else {
-      console.error("User ID not available");
-      // You might want to show an error message to the user here
+    try {
+      mutation.mutate({
+        name: projectName,
+        description: projectDescription,
+        directory: "C:\\Users\\uclam\\Downloads\\Lucas",
+      });
+    } catch (e: any) {
+      setError(e.message);
     }
   };
 

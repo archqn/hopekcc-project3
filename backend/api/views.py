@@ -16,6 +16,7 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.request import Request
 from .authentication import JWTAuthentication
 
+
 # Authentication abstraction to reuse
 def authenticate(request):
     auth = JWTAuthentication()
@@ -45,7 +46,7 @@ def authenticate(request):
 }
 '''
 
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny
 from .utils import upload_file_to_gcs, delete_file_from_gcs, get_file_content_from_gcs, update_file_in_gcs
 
 
@@ -71,140 +72,7 @@ from rest_framework.decorators import action
 directory = r"C:\Users\uclam\Downloads\Lucas"
 
 logger = logging.getLogger(__name__)
-'''
-class FileViewSet(viewsets.ModelViewSet):
-    """
-    This ViewSet provides `list`, `create`, `retrieve`,
-    `update` and `destroy` actions.
-    
-    Additionally, in detail views it'll retrieve the file content from Google Cloud Storage.
-    """
-    
-    queryset = File.objects.all()
-    serializer_class = FileSerializer
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsProjectOwner]
-    
-    def create(self, request, *args, **kwargs):
-        file = request.FILES.get('file')
-        if not file:
-            return Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
 
-        project_id = request.data.get('project')
-        if not project_id:
-            return Response({'error': 'Project ID is required'}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            project = Project.objects.get(id=project_id)
-        except Project.DoesNotExist:
-            return Response({'error': 'Project not found'}, status=status.HTTP_404_NOT_FOUND)
-        
-        # Create the project directory using the project name
-        project_folder = os.path.join(directory, project.name)
-        try:
-            if not os.path.exists(project_folder):
-                os.makedirs(project_folder)
-                logger.info(f"Directory created: {project_folder}")
-        except Exception as e:
-            logger.error(f"Error creating project directory: {str(e)}")
-            return Response({'error': 'Error creating project directory'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        try:
-            # Save the file to the project folder
-            file_path = os.path.join(project_folder, file.name)
-            with default_storage.open(file_path, 'wb+') as destination:
-                for chunk in file.chunks():
-                    destination.write(chunk)
-
-            # Build the file URL (in this case, just the file path)
-            file_url = file_path
-            
-            # Save the file information in the database
-            serializer = self.get_serializer(data={
-                'project': project_id,
-                'file_name': file.name,
-                'file_url': file_url  # Save the local path in the database
-            })
-            serializer.is_valid(raise_exception=True)
-            self.perform_create(serializer)
-            headers = self.get_success_headers(serializer.data)
-            logger.info(f"File created: {serializer.data['file_name']} for project {project_id}")
-            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-
-        except Exception as e:
-            logger.error(f"Error creating file: {str(e)}")
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-        
-
-    def retrieve(self, request, *args, **kwargs):
-        # additionally fetch the content files in detail view
-        instance = self.get_object()
-        serializer = self.get_serializer(instance)
-        data = serializer.data
-        try:
-            data['content'] = get_file_content_from_gcs(instance.file_url)
-            logger.info(f"File content retrieved: {instance.file_name}")
-            return Response(data)
-        except exceptions.NotFound:
-            logger.warning(f"File not found in storage: {instance.file_url}")
-            return Response({'error': 'File not found in storage'}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            logger.error(f"Error retrieving file content: {str(e)}")
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    def update(self, request, *args, **kwargs):
-        """handles both partial and full update"""
-        partial = kwargs.pop('partial', False)
-        instance = self.get_object()
-        file = request.FILES.get('file')
-
-        # The permission class will handle ownership check
-
-        try:
-            # Create a mutable copy of the request data
-            mutable_data = request.data.copy()
-
-            if file:
-                file_url = update_file_in_gcs(file, instance.file_url)
-                mutable_data['file_url'] = file_url
-
-                
-            serializer = self.get_serializer(instance, data=mutable_data, partial=partial)
-            serializer.is_valid(raise_exception=True)
-            self.perform_update(serializer)
-
-            logger.info(f"File updated: {instance.file_name}")
-            return Response(serializer.data)
-        except exceptions.NotFound:
-            logger.warning(f"File not found in storage: {instance.file_url}")
-            return Response({'error': 'File not found in storage'}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            logger.error(f"Error updating file: {str(e)}")
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        
-        # The permission class will handle ownership check
-        
-        try:
-            delete_file_from_gcs(instance.file_url)
-            self.perform_destroy(instance)
-            logger.info(f"File deleted: {instance.file_name}")
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        except Exception as e:
-            logger.error(f"Error deleting file: {str(e)}")
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-"""
-CRUD 
-    view for changing project title --> file editor
-    view for changing project description --> file editor
-    view for deleting project --> file editor
-    view for creating project --> file editor
-"""
-'''
 
 class ProjectViewSet(viewsets.ModelViewSet):
     """
@@ -221,11 +89,12 @@ class ProjectViewSet(viewsets.ModelViewSet):
     - list
     - create
     """
-    queryset = Project.objects.all()
-    serializer_class = ProjectSerializer
-    #T ODO Add auth-0 authentication
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsProjectOwner]
+    # queryset = Project.objects.all()
+    # serializer_class = ProjectSerializer
+    # TODO Add auth-0 authentication
+    # authentication_classes = [JWTAuthentication]
+    permission_classes = [AllowAny]
+    '''
     def list(self, request, *args, **kwargs):
 
         user, token = authenticate(request)
@@ -251,8 +120,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
             return JsonResponse({'status': 'error', 'message': 'Error accessing directory'}, status=500)
         
         return Response(directory_contents)
+    '''
     
-
     def list_dynamic(self, request, *args, **kwargs):
         """
         New version of list that takes directory as input dynamically
@@ -282,74 +151,43 @@ class ProjectViewSet(viewsets.ModelViewSet):
         # Return the directory contents
         return Response(directory_contents, status=status.HTTP_200_OK)
     
-    def create(self, request, *args, **kwargs):
 
-        user, token = authenticate(request)
-        if not user:
-            return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=401)
+    def create(self, request, *args, **kwargs):
 
         # Parse incoming data
         data = request.data.copy()
+
+        print(f"Received data: {data}")
+
         project_title = data.get('name')  # Assuming the title is stored under 'name'
-        # data['auth0_user_id'] = user.get('sub')  # Add Auth0 user ID to the data
+
+        directory = data.get('directory')
+
+        if not project_title:
+            return Response({'status': 'error', 'message': 'Project name is required'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Create folder in local directory
         project_folder_path = os.path.join(directory, project_title)
+
+        print(f"Attempting to create directory: {project_folder_path}")
 
         try:
             # Check if the folder already exists
             if not os.path.exists(project_folder_path):
                 os.makedirs(project_folder_path)
+                print(f"Directory created: {project_folder_path}")
+                return Response(project_title, status=status.HTTP_201_CREATED)
             else:
-                return JsonResponse({'status': 'error', 'message': 'Directory already exists'}, status=400)
+                print(f"Project already exists: {project_folder_path}")
+                return JsonResponse({'status': 'error', 'message': 'Project already exists'}, status=400)
         except Exception as e:
+            print(f"Error during directory creation: {str(e)}")
             return JsonResponse({'status': 'error', 'message': 'Error creating directory'}, status=500)
 
-        # Use the serializer to validate and save the project
-        serializer = self.get_serializer(data=data)
-        if serializer.is_valid(raise_exception=True):
-            self.perform_create(serializer)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
 
 
 
-    def retrieve(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance)
-        data = serializer.data
-        # The related files are already included in the serializer
-        return Response(data)
-    
 
-    # new - doesnt work
-    @transaction.atomic
-    def destroy(self, request, *args, **kwargs):
-        """
-        Deletes a project based on the directory path passed in query parameters.
-        """
-        # Get the directory from query parameters
-        project_name = request.query_params.get('name')
-
-        # Check if directory is provided
-        if not project_name:
-            return Response({'status': 'error', 'message': 'project name is required'}, status=status.HTTP_400_BAD_REQUEST)
-
-        project_directory = os.path.join(directory, project_name)
-        # Check if the directory exists
-        if not os.path.exists(project_directory):
-            return Response({'status': 'error', 'message': 'Project directory does not exist'}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            # Remove the directory and its contents
-            shutil.rmtree(project_directory)
-            return Response({'status': 'success', 'message': f'Project directory {project_directory} deleted successfully'}, status=status.HTTP_200_OK)
-        
-        except Exception as e:
-            return Response({'status': 'error', 'message': f'Error deleting project directory: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
 @csrf_exempt
 def upload(request):
     """
@@ -395,10 +233,6 @@ def upload_folder(request):
     """
     Handle folder uploads, replicating folder structure on the server.
     """
-    # Authenticate user
-    user = authenticate(request)
-    if not user:
-        return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=401)
 
     project_name = request.POST.get('project')
     if not project_name:

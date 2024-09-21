@@ -103,15 +103,11 @@ const Home = () => {
   
   const [filteredProjects, setFilteredProjects] = useState<Project[]>([]); // search bar will filter results
   const [searchQuery, setSearchQuery] = useState<string>("");
-  // Fetch projects using axios and Auth0 token
+
   const fetchProjects = async (): Promise<Project[]> => {
-    const token = "proxy token";
-    const response = await axios.get("http://127.0.0.1:8000/api/projects/list_dynamic/", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    // console.log(response);
+    const directoryPath = "C:\\Users\\uclam\\Downloads\\Lucas";
+    const response = await axios.get(`http://127.0.0.1:8000/api/projects/list_dynamic/?directory=${directoryPath}`);
+
     return response.data;
   };
 
