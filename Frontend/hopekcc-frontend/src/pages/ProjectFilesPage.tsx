@@ -1,24 +1,68 @@
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery } from "react-query";
 import axios from "axios";
 import { DeleteButton } from "../components/projectComponents/Buttons.tsx";
+import { jwtDecode } from 'jwt-decode';
+
+interface DecodedToken {
+  email: string;
+  name: string;
+  picture: string;
+}
 
 const ProjectFilesPage = () => {
   const { name } = useParams();
+  const [userDirectory, setUserDirectory] = useState<string>("");
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [authLoading, setAuthLoading] = useState<boolean>(true);
 
-  // Replace with your static root directory
-  const rootDirectory = "C:/Users/uclam/Downloads/Lucas";
+  useEffect(() => {
+    const token = localStorage.getItem("google_token");
+    if (token) {
+      try {
+        const decodedToken = jwtDecode<DecodedToken>(token);
+        const email = decodedToken.email;
+
+        // Format the email and set the dynamic directory
+        const formattedEmail = `ext_${email.replace(/[@.]/g, "_")}`;
+
+
+        // ------------------------------------ SET ROOT DIRECTORY HERE --------------------------------
+        const rootDirectory = "C:/Users/uclam/Downloads/";  
+
+
+        setUserDirectory(`${rootDirectory}${formattedEmail}`);
+        setIsAuthenticated(true);
+      } catch (error) {
+        console.error("Error decoding token:", error);
+        setIsAuthenticated(false);
+      }
+    }
+    else {
+      setIsAuthenticated(false);
+    }
+    setAuthLoading(false); 
+  }, []);
+
+  
+
+  const rootDirectory = "C:/Users/uclam/Downloads/";
 
   // Fetch the files for the selected project using the project name
   const fetchProjectFiles = async () => {
-    const directoryPath = `${rootDirectory}/${name}`;
+    if (!userDirectory || !name) return [];
+
+    const directoryPath = `${userDirectory}//${name}`;
     const response = await axios.get(
-      `http://127.0.0.1:8000/api/projects/list_dynamic/?directory=${directoryPath}` // change later
+      `http://127.0.0.1:8000/api/projects/list_dynamic/?directory=${directoryPath}` 
     );
     return response.data;
   };
 
-  const { data, isLoading, isError } = useQuery(["projectFiles", name], fetchProjectFiles);
+  const { data, isLoading, isError } = useQuery(["projectFiles", name, userDirectory], fetchProjectFiles, {
+    enabled: !!name, 
+  });
 
   const handleDeleteFolder = async (folderName: string) => {
     if (!window.confirm(`Are you sure you want to delete the folder: ${folderName}?`)) {
@@ -27,8 +71,9 @@ const ProjectFilesPage = () => {
 
     try {
       const response = await axios.post("http://127.0.0.1:8000/api/projects/delete_folder/", {
-        project: name, // The project name from the URL parameter
-        folder: folderName // The folder to delete
+        project: name, 
+        folder: folderName,  
+        directory: userDirectory,
       });
 
       if (response.status === 200) {
@@ -95,6 +140,7 @@ const ProjectFilesPage = () => {
     }
 
     formData.append("project", name);
+    formData.append("directory", userDirectory);
 
     // for (let pair of formData.entries()) {
     //   console.log(pair[0], pair[1]);
@@ -114,6 +160,22 @@ const ProjectFilesPage = () => {
     }
 
   };
+
+  if (authLoading) {
+    return (
+      <div className="my-56">
+        <div className="text-center">Loading authentication...</div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="my-56">
+        <div className="text-center">Please log in to view your projects.</div>
+      </div>
+    );
+  }
 
   if (isLoading) return <div>Loading files...</div>;
   if (isError) return <div>Error loading files.</div>;

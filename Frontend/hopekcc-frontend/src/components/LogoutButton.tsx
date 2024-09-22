@@ -1,13 +1,16 @@
-import { useAuth0 } from "@auth0/auth0-react";
-const LogoutButton = () => {
-  const { logout, isAuthenticated } = useAuth0();
+
+
+interface LogoutButtonProps {
+  onLogout: () => void;
+}
+
+const LogoutButton: React.FC<LogoutButtonProps> = ({ onLogout }) => {
+  
   return (
-    isAuthenticated && (
-      <button className="text-black" onClick={() => logout()}>
-        Log Out
-      </button>
-    )
-  );
-};
+    <div id="signOutButton">
+      <button onClick={onLogout}>Logout</button>
+    </div>
+  )
+}
 
 export default LogoutButton;

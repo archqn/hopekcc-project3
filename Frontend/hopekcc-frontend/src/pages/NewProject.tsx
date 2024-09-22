@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../components/projectComponents/Buttons";
-import { useAuth0 } from "@auth0/auth0-react";
 import axios from "axios";
 import { useMutation, useQueryClient } from "react-query";
+import { jwtDecode } from 'jwt-decode';
+
 
 interface InputFieldProps {
   id: string;
@@ -11,6 +12,12 @@ interface InputFieldProps {
   value: string;
   onChange: (value: string) => void;
   required?: boolean;
+}
+
+interface DecodedToken {
+  email: string;
+  name: string;
+  picture: string;
 }
 
 const InputField: React.FC<InputFieldProps> = ({
@@ -63,25 +70,51 @@ const TextAreaField: React.FC<TextAreaFieldProps> = ({
 const NewProject: React.FC = () => {
   const [projectName, setProjectName] = useState("");
   const [projectDescription, setProjectDescription] = useState("");
+  const [userDirectory, setUserDirectory] = useState<string>("");
   const navigate = useNavigate();
-  const { getAccessTokenSilently, user } = useAuth0();
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
+
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [authLoading, setAuthLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    const token = localStorage.getItem("google_token");
+    if (token) {
+      try {
+        const decodedToken = jwtDecode<DecodedToken>(token);
+        const email = decodedToken.email;
+
+        // Format the email and set the dynamic directory
+        const formattedEmail = `ext_${email.replace(/[@.]/g, "_")}`;
+
+
+        // ------------------------------------ SET ROOT DIRECTORY HERE --------------------------------
+        const rootDirectory = "C:/Users/uclam/Downloads/";  
+
+
+        setUserDirectory(`${rootDirectory}${formattedEmail}`);
+        setIsAuthenticated(true);
+      } catch (error) {
+        console.error("Error decoding token:", error);
+        setIsAuthenticated(false);
+      }
+    }
+    else {
+      setIsAuthenticated(false);
+    }
+    setAuthLoading(false); 
+  }, []);
+
   const createProject = async (projectData: {
     name: string;
     description: string;
-    auth0_user_id: string;
+    directory: string;
   }) => {
-    const token = await getAccessTokenSilently();
+    // const token = await getAccessTokenSilently();
     const response = await axios.post(
       "http://127.0.0.1:8000/api/projects/",
-      projectData,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      }
+      projectData
     );
     return response.data;
   };
@@ -97,25 +130,37 @@ const NewProject: React.FC = () => {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (user && user.sub) {
-      try {
-        mutation.mutate({
-          name: projectName,
-          description: projectDescription,
-          auth0_user_id: user.sub,
-        });
-      } catch (e: any) {
-        setError(e.message);
-      }
-    } else {
-      console.error("User ID not available");
-      // You might want to show an error message to the user here
+    try {
+      mutation.mutate({
+        name: projectName,
+        description: projectDescription,
+        directory: userDirectory,
+      });
+    } catch (e: any) {
+      setError(e.message);
     }
   };
 
   const handleCancel = () => {
     navigate("/"); // Navigate to the home page
   };
+
+  if (authLoading) {
+    return (
+      <div className="my-56">
+        <div className="text-center">Loading authentication...</div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="my-56">
+        <div className="text-center">Please log in to view your projects.</div>
+      </div>
+    );
+  }
+
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">

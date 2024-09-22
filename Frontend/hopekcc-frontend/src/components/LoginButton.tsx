@@ -1,12 +1,24 @@
-import { useAuth0 } from "@auth0/auth0-react";
+import { GoogleLogin } from '@react-oauth/google';
+import { CredentialResponse } from '@react-oauth/google';
 
-const LoginButton = () => {
-  const { loginWithRedirect, isAuthenticated } = useAuth0();
-  return (
-    !isAuthenticated && (
-      <button onClick={() => loginWithRedirect()}>Login</button>
-    )
+interface LoginButtonProps {
+  onSuccess: (credentialResponse: CredentialResponse) => void;
+}
+
+
+const LoginButton: React.FC<LoginButtonProps> = ({ onSuccess }) => {
+
+  const onError = () => {
+    console.log('[Login Failed]');
+  };
+  return(
+    <div id="signInButton">
+      <GoogleLogin
+        onSuccess={onSuccess}
+        onError={onError}
+      />
+    </div>
   );
-};
+}
 
 export default LoginButton;

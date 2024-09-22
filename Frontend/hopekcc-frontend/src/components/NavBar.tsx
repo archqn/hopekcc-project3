@@ -1,49 +1,69 @@
-import { useState } from "react";
-import { Link, useLocation, useParams } from "react-router-dom";
-import { useAuth0 } from "@auth0/auth0-react";
-import { User } from "@auth0/auth0-spa-js";
+import { createContext, useContext, useState, useEffect} from "react";
+import { Link, useLocation } from "react-router-dom";
+import { CredentialResponse } from '@react-oauth/google';
+import { jwtDecode } from 'jwt-decode';
+
+// import { useAuth0 } from "@auth0/auth0-react";
+// import { User } from "@auth0/auth0-spa-js";
+// import UserInfo from "./UserInfo";
+
 import { House, ArrowLeft, Edit, FileText, Eye } from "lucide-react";
+import { TitleDisplayButton } from "./projectComponents/Buttons";
 
 import LoginButton from "./LoginButton";
-import { TitleDisplayButton } from "./projectComponents/Buttons";
-import UserInfo from "./UserInfo";
+import LogoutButton from "./LogoutButton";
 
-const navClass =
-  "flex justify-between items-center bg-gray-500 text-white p-4 ";
+
+// Define the structure of the decoded token
+interface DecodedToken {
+  email: string;
+  name: string;
+  picture: string;
+}
+
+const navClass = "flex justify-between items-center bg-gray-500 text-white p-4 ";
 const ulClass = "flex space-x-4 items-center";
 const liClass = "mx-2 px-2";
 const linkClass = "text-white";
 const activeLinkClass = "underline";
-const HoverableUserInfo = ({ user }: { user: User }) => {
-  const [showUserInfo, setShowUserInfo] = useState(false); // Declare the setShowUserInfo function
 
-  return (
-    <div
-      onMouseEnter={() => setShowUserInfo(true)}
-      onMouseLeave={() => setShowUserInfo(false)}
-      className="relative"
-    >
-      <img
-        src={user.picture}
-        alt={user.name}
-        className="w-8 h-8 rounded-full"
-      />
-      {showUserInfo && (
-        <>
-          <div className="absolute top-full right-0 w-64 h-4" />
-          <UserInfo user={user} />
-        </>
-      )}
-    </div>
-  );
-};
 
 export const NavBar = () => {
-  const { isAuthenticated, user } = useAuth0();
+  // const { isAuthenticated, user } = useAuth0();
   const location = useLocation();
+  const [user, setUser] = useState<string | null>(null);
+
   const getLinkClass = (path: string) =>
     `${linkClass} ${location.pathname === path ? activeLinkClass : ""}`;
   // don't display if editing
+
+  const onSuccess = (credentialResponse: CredentialResponse) => {
+    const token = credentialResponse.credential;
+    if (token) {
+      // Store the token in local storage
+      localStorage.setItem("google_token", token);
+
+      // Decode the token to extract user information (email)
+      const decodedToken = jwtDecode<DecodedToken>(token);
+      setUser(decodedToken.email); // Set user email
+    }
+    window.location.reload();
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    localStorage.removeItem("google_token");
+    window.location.reload(); 
+  };
+
+  useEffect(() => {
+    const token = localStorage.getItem("google_token");
+    if (token) {
+      const decodedToken = jwtDecode<DecodedToken>(token);
+      setUser(decodedToken.email);
+    }
+  }, []);
+  
   if (location.pathname.includes("edit-project")) return null;
   return (
     <nav className={navClass} style={{ backgroundColor: "#1d769f" }}>
@@ -75,10 +95,13 @@ export const NavBar = () => {
             </Link>
           </li>
           <li className={liClass}>
-            {isAuthenticated && user ? (
-              <HoverableUserInfo user={user} />
+            {user ? (
+              <>
+                <span>Signed in as {user}</span>
+                <LogoutButton onLogout={handleLogout}/>
+              </>
             ) : (
-              <LoginButton />
+              <LoginButton onSuccess={onSuccess}/>
             )}
           </li>
         </ul>
@@ -86,6 +109,8 @@ export const NavBar = () => {
     </nav>
   );
 };
+
+
 
 export const ProjectNavBar = ({
   onSwitchView,
@@ -102,8 +127,6 @@ export const ProjectNavBar = ({
   title: string;
   modifiedTime: string;
 }) => {
-  const { id } = useParams<{ id: string }>();
-  const { isAuthenticated, user } = useAuth0();
   return (
     <nav
       className={
@@ -113,7 +136,7 @@ export const ProjectNavBar = ({
     >
       <ul className={ulClass}>
         <li className={liClass}>
-          <Link to={`/projects/${id}`} className="flex items-center">
+          <Link to={`/projects/`} className="flex items-center">
             <ArrowLeft size={20} className="mx-2" />
             <span>Back</span>
           </Link>
@@ -158,13 +181,6 @@ export const ProjectNavBar = ({
             <FileText className="mx-2" /> Desc
           </button>
         </li>
-        <ul className={liClass}>
-          {isAuthenticated && user ? (
-            <HoverableUserInfo user={user} />
-          ) : (
-            <LoginButton />
-          )}
-        </ul>
       </ul>
     </nav>
   );
