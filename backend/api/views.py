@@ -17,6 +17,13 @@ from rest_framework.request import Request
 from .authentication import JWTAuthentication
 
 
+
+
+def test_api(request):
+    return JsonResponse({'message': 'API is working!'}, status=200)
+
+
+
 # Authentication abstraction to reuse
 def authenticate(request):
     auth = JWTAuthentication()

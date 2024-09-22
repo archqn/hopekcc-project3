@@ -90,7 +90,7 @@ const NewProject: React.FC = () => {
 
 
         // ------------------------------------ SET ROOT DIRECTORY HERE --------------------------------
-        const rootDirectory = "C:/Users/uclam/Downloads/";  
+        const rootDirectory = "home/";  
 
 
         setUserDirectory(`${rootDirectory}${formattedEmail}`);
@@ -113,7 +113,7 @@ const NewProject: React.FC = () => {
   }) => {
     // const token = await getAccessTokenSilently();
     const response = await axios.post(
-      "http://127.0.0.1:8000/api/projects/",
+      "https://class4.hopekcc.org:5173/api/projects",
       projectData
     );
     return response.data;

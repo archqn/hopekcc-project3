@@ -23,6 +23,7 @@ const ProjectList = ({ projects, isLoading }: ProjectListProps) => {
   if (isLoading) {
     return <div>Loading projects...</div>;
   }
+
   const ProjectHeader = () => {
     return (
       <div className="grid grid-cols-12 gap-4 items-center py-3 rounded-md transition-colors duration-150">
@@ -38,6 +39,7 @@ const ProjectList = ({ projects, isLoading }: ProjectListProps) => {
       </div>
     );
   };
+
   const ProjectItem = ({ project }: { project: Project }) => {
     const [userDirectory, setUserDirectory] = useState<string | null>(null);
 
@@ -47,12 +49,9 @@ const ProjectList = ({ projects, isLoading }: ProjectListProps) => {
         try {
           const decodedToken = jwtDecode<DecodedToken>(token);
           const email = decodedToken.email;
-  
-          const formattedEmail = `ext_${email.replace(/[@.]/g, "_")}`;
 
-          // ------------------------------------ SET ROOT DIRECTORY HERE ------------------------------------
-          const rootDirectory = "C:/Users/uclam/Downloads/"; 
-  
+          const formattedEmail = `ext_${email.replace(/[@.]/g, "_")}`;
+          const rootDirectory = "home/"; 
           setUserDirectory(`${rootDirectory}${formattedEmail}`);
         } catch (error) {
           console.error("Error decoding token:", error);
@@ -65,18 +64,18 @@ const ProjectList = ({ projects, isLoading }: ProjectListProps) => {
       if (!window.confirm(`Are you sure you want to delete the project: ${name}?`)) {
         return;
       }
-    
+
       try {
-        const response = await axios.delete("http://127.0.0.1:8000/api/projects/delete/", {
+        const response = await axios.delete("https://class4.hopekcc.org:5173/api/projects/delete/", {
           data: {
             name: name, 
             directory: userDirectory,
           }
         });
-    
+
         if (response.status === 200) {
           alert("Project deleted successfully.");
-          window.location.reload();  // Refresh the page to update the project list
+          window.location.reload();
         } else {
           console.error("Failed to delete project:", response.data);
         }
@@ -85,6 +84,7 @@ const ProjectList = ({ projects, isLoading }: ProjectListProps) => {
         alert("Error deleting project.");
       }
     };
+
     return (
       <div className="grid grid-cols-12 gap-4 items-center py-3 hover:bg-gray-50 rounded-md transition-colors duration-150">
         <div className="col-span-3">
@@ -96,14 +96,10 @@ const ProjectList = ({ projects, isLoading }: ProjectListProps) => {
           {project.description}
         </div>
         <div className="col-span-2 flex items-center text-xs text-gray-400">
-          <span className="truncate">
-            {new Date(project.updated_at).toLocaleDateString()}
-          </span>
+          <span className="truncate">{new Date(project.updated_at).toLocaleDateString()}</span>
         </div>
         <div className="col-span-2 flex items-center text-xs text-gray-400">
-          <span className="truncate">
-            {new Date(project.created_at).toLocaleDateString()}
-          </span>
+          <span className="truncate">{new Date(project.created_at).toLocaleDateString()}</span>
         </div>
         <DeleteButton onClick={() => handleProjectDelete(project.name)} className="mx-2" />
       </div>
@@ -113,9 +109,7 @@ const ProjectList = ({ projects, isLoading }: ProjectListProps) => {
   return (
     <div className="bg-gray-100 container mx-auto px-4 py-4">
       <div className="divide-y divide-gray-200">
-        {/* Header row */}
         <ProjectHeader />
-
         {projects.length === 0 ? (
           <p className="text-gray-500 italic py-3">No projects available</p>
         ) : (
@@ -129,26 +123,24 @@ const ProjectList = ({ projects, isLoading }: ProjectListProps) => {
 };
 
 const Home = () => {
-  const [filteredProjects, setFilteredProjects] = useState<Project[]>([]); // search bar will filter results
+  const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [authLoading, setAuthLoading] = useState<boolean>(true);
   const [userDirectory, setUserDirectory] = useState<string>("");
 
   const fetchProjects = async (): Promise<Project[]> => {
-    
-    const response = await axios.get(`http://127.0.0.1:8000/api/projects/list_dynamic/?directory=${userDirectory}`);
-
-    return response.data;
+    const response = await axios.get(`https://class4.hopekcc.org:5173/api/projects/list_dynamic/?directory=${userDirectory}`);
+    return Array.isArray(response.data) ? response.data : [];
   };
 
-  const { data, isLoading, isError, error } = useQuery<Project[]>(
+  const { data = [], isLoading, isError, error } = useQuery<Project[]>(
     "projects",
     fetchProjects,
     {
       enabled: !!userDirectory,
       onSuccess: (projects) => {
-      setFilteredProjects(projects);
+        setFilteredProjects(projects);
       },
     }
   );
@@ -159,37 +151,30 @@ const Home = () => {
       try {
         const decodedToken = jwtDecode<DecodedToken>(token);
         const email = decodedToken.email;
-
-        const formattedemail = `ext_${email.replace(/[@.]/g, "_")}`;
-
-
-        // ------------------------------------ SET ROOT DIRECTORY HERE ------------------------------------
-        const rootDirectory = "C:/Users/uclam/Downloads/"; 
-
-
-        setUserDirectory(`${rootDirectory}${formattedemail}`);
-        setIsAuthenticated(true); 
+        const formattedEmail = `ext_${email.replace(/[@.]/g, "_")}`;
+        const rootDirectory = "home/"; 
+        setUserDirectory(`${rootDirectory}${formattedEmail}`);
+        setIsAuthenticated(true);
       } catch (error) {
         console.error("Error decoding token:", error);
-        setIsAuthenticated(false); 
+        setIsAuthenticated(false);
       }
     } else {
       setIsAuthenticated(false);
     }
-    setAuthLoading(false); // Finished checking authentication
+    setAuthLoading(false);
   }, []);
-
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     if (query.trim() === "") {
-      setFilteredProjects(data || []); // Show all projects if the query is empty
+      setFilteredProjects(data || []);
     }
   };
 
   const handleSearchSubmit = () => {
     if (searchQuery.trim() === "") {
-      setFilteredProjects(data || []); // Show all projects if the query is empty
+      setFilteredProjects(data || []);
     } else {
       const filtered = (data || []).filter(
         (project) =>
@@ -235,12 +220,12 @@ const Home = () => {
       <section className="mx-auto px-4 py-4">
         <SearchBar
           onSearch={handleSearch}
-          onSubmit={handleSearchSubmit} // Handle search on Enter key press
+          onSubmit={handleSearchSubmit}
         />
       </section>
 
       {/* Create Project Section */}
-      <section className="bg-gray-100  mx-auto px-4 py-8">
+      <section className="bg-gray-100 mx-auto px-4 py-8">
         <div className="mb-6">
           <h2 className="text-2xl text-left font-semibold mb-2 text-gray-800">
             Create Project
@@ -251,31 +236,27 @@ const Home = () => {
                 to="/new-project"
                 className="relative w-48 h-12 flex items-center justify-center group"
               >
-                {/* Light blue background */}
                 <div className="absolute inset-0 bg-[#a8e9fd] transition-transform duration-300 ease-in-out transform group-hover:skew-x-[10deg] group-hover:scale-105 group-hover:shadow-lg z-0"></div>
-
-                {/* Text */}
                 <div className="relative text-lg font-bold text-[#1d769f] transition-transform duration-300 ease-in-out transform group-hover:scale-105 z-10">
                   New Project
                 </div>
-
-                {/* Rhombus border */}
                 <div className="absolute inset-0 border-4 border-[#1d769f] transition-transform duration-300 ease-in-out transform group-hover:skew-x-[-10deg] group-hover:scale-105 z-5"></div>
               </Link>
             </div>
           </div>
         </div>
       </section>
+
       {/* Projects Section */}
       <section className="mx-auto px-4 py-8">
         <h2 className="text-2xl text-left font-semibold mb-6 text-gray-800">
           Projects
         </h2>
-        <ProjectList projects={filteredProjects || []} isLoading={isLoading} />
-        {/* ensure data is defined before accessing it */}
+        <ProjectList projects={filteredProjects} isLoading={isLoading} />
       </section>
     </div>
   );
 };
 
 export default Home;
+

@@ -17,6 +17,9 @@ Project_delete = ProjectViewSet.as_view({
 
 
 urlpatterns = [
+    # test
+    path('test/', test_api, name='test_api'),
+
 
     path('projects/', Project_list, name='project-list'),
     path('projects/list_dynamic/', Project_list, name='project-list-dynamic'),

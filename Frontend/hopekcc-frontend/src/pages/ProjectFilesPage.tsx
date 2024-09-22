@@ -29,7 +29,7 @@ const ProjectFilesPage = () => {
 
 
         // ------------------------------------ SET ROOT DIRECTORY HERE --------------------------------
-        const rootDirectory = "C:/Users/uclam/Downloads/";  
+        const rootDirectory = "home/";  
 
 
         setUserDirectory(`${rootDirectory}${formattedEmail}`);
@@ -47,7 +47,7 @@ const ProjectFilesPage = () => {
 
   
 
-  const rootDirectory = "C:/Users/uclam/Downloads/";
+  const rootDirectory = "home/";
 
   // Fetch the files for the selected project using the project name
   const fetchProjectFiles = async () => {
@@ -55,7 +55,7 @@ const ProjectFilesPage = () => {
 
     const directoryPath = `${userDirectory}//${name}`;
     const response = await axios.get(
-      `http://127.0.0.1:8000/api/projects/list_dynamic/?directory=${directoryPath}` 
+      `http://class4.hopekcc.org:5173/api/projects/list_dynamic/?directory=${directoryPath}` 
     );
     return response.data;
   };
@@ -70,7 +70,7 @@ const ProjectFilesPage = () => {
     }
 
     try {
-      const response = await axios.post("http://127.0.0.1:8000/api/projects/delete_folder/", {
+      const response = await axios.post("http://class4.hopekcc.org:5173/api/projects/delete_folder/", {
         project: name, 
         folder: folderName,  
         directory: userDirectory,
@@ -149,7 +149,7 @@ const ProjectFilesPage = () => {
     // Send the request to the backend
     try {
       const response = await axios.post(
-        "http://127.0.0.1:8000/api/projects/upload_folder/",
+        "http://class4.hopekcc.org:5173/api/projects/upload_folder/",
         formData,
         { headers: { "Content-Type": "multipart/form-data" } }
       );
