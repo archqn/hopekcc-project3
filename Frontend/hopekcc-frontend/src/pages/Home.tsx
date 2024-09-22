@@ -1,17 +1,24 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import { useQuery } from "react-query";
 import { Clock, Calendar } from "lucide-react";
 import { Project } from "../utils/types.ts";
-import {
-  DeleteButton,
-} from "../components/projectComponents/Buttons.tsx";
+import { DeleteButton } from "../components/projectComponents/Buttons.tsx";
 import SearchBar from "../components/SearchBar.tsx";
+import { jwtDecode } from 'jwt-decode';
+
 interface ProjectListProps {
   projects: Project[];
   isLoading: boolean;
 }
+
+interface DecodedToken {
+  email: string;
+  name: string;
+  picture: string;
+}
+
 const ProjectList = ({ projects, isLoading }: ProjectListProps) => {
   if (isLoading) {
     return <div>Loading projects...</div>;
@@ -32,6 +39,28 @@ const ProjectList = ({ projects, isLoading }: ProjectListProps) => {
     );
   };
   const ProjectItem = ({ project }: { project: Project }) => {
+    const [userDirectory, setUserDirectory] = useState<string | null>(null);
+
+    useEffect(() => {
+      const token = localStorage.getItem("google_token");
+      if (token) {
+        try {
+          const decodedToken = jwtDecode<DecodedToken>(token);
+          const email = decodedToken.email;
+  
+          const formattedEmail = `ext_${email.replace(/[@.]/g, "_")}`;
+
+          // ------------------------------------ SET ROOT DIRECTORY HERE ------------------------------------
+          const rootDirectory = "C:/Users/uclam/Downloads/"; 
+  
+          setUserDirectory(`${rootDirectory}${formattedEmail}`);
+        } catch (error) {
+          console.error("Error decoding token:", error);
+          setUserDirectory(null);
+        }
+      }
+    }, []);
+
     const handleProjectDelete = async (name: string) => {
       if (!window.confirm(`Are you sure you want to delete the project: ${name}?`)) {
         return;
@@ -40,7 +69,8 @@ const ProjectList = ({ projects, isLoading }: ProjectListProps) => {
       try {
         const response = await axios.delete("http://127.0.0.1:8000/api/projects/delete/", {
           data: {
-            name: name,  // Pass the directory in query parameters
+            name: name, 
+            directory: userDirectory,
           }
         });
     
@@ -99,14 +129,15 @@ const ProjectList = ({ projects, isLoading }: ProjectListProps) => {
 };
 
 const Home = () => {
-  
-  
   const [filteredProjects, setFilteredProjects] = useState<Project[]>([]); // search bar will filter results
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [authLoading, setAuthLoading] = useState<boolean>(true);
+  const [userDirectory, setUserDirectory] = useState<string>("");
 
   const fetchProjects = async (): Promise<Project[]> => {
-    const directoryPath = "C:\\Users\\uclam\\Downloads\\Lucas";
-    const response = await axios.get(`http://127.0.0.1:8000/api/projects/list_dynamic/?directory=${directoryPath}`);
+    
+    const response = await axios.get(`http://127.0.0.1:8000/api/projects/list_dynamic/?directory=${userDirectory}`);
 
     return response.data;
   };
@@ -115,22 +146,39 @@ const Home = () => {
     "projects",
     fetchProjects,
     {
+      enabled: !!userDirectory,
       onSuccess: (projects) => {
-        setFilteredProjects(projects);
+      setFilteredProjects(projects);
       },
     }
   );
-  // if (isLoading) {
-  //   return <div>Loading projects...</div>;
-  // }
-  if (isError) {
-    return (
-      <div>
-        Error loading projects:{" "}
-        {error instanceof Error ? error.message : "Unknown error"}
-      </div>
-    );
-  }
+
+  useEffect(() => {
+    const token = localStorage.getItem("google_token");
+    if (token) {
+      try {
+        const decodedToken = jwtDecode<DecodedToken>(token);
+        const email = decodedToken.email;
+
+        const formattedemail = `ext_${email.replace(/[@.]/g, "_")}`;
+
+
+        // ------------------------------------ SET ROOT DIRECTORY HERE ------------------------------------
+        const rootDirectory = "C:/Users/uclam/Downloads/"; 
+
+
+        setUserDirectory(`${rootDirectory}${formattedemail}`);
+        setIsAuthenticated(true); 
+      } catch (error) {
+        console.error("Error decoding token:", error);
+        setIsAuthenticated(false); 
+      }
+    } else {
+      setIsAuthenticated(false);
+    }
+    setAuthLoading(false); // Finished checking authentication
+  }, []);
+
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -151,6 +199,35 @@ const Home = () => {
       setFilteredProjects(filtered);
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="my-56">
+        <div className="text-center">Loading authentication...</div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="my-56">
+        <div className="text-center">Please log in to view your projects.</div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return <div>Loading projects...</div>;
+  }
+
+  if (isError) {
+    return (
+      <div>
+        Error loading projects:{" "}
+        {error instanceof Error ? error.message : "Unknown error"}
+      </div>
+    );
+  }
 
   return (
     <div>

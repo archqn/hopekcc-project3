@@ -1,8 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../components/projectComponents/Buttons";
 import axios from "axios";
 import { useMutation, useQueryClient } from "react-query";
+import { jwtDecode } from 'jwt-decode';
+
 
 interface InputFieldProps {
   id: string;
@@ -10,6 +12,12 @@ interface InputFieldProps {
   value: string;
   onChange: (value: string) => void;
   required?: boolean;
+}
+
+interface DecodedToken {
+  email: string;
+  name: string;
+  picture: string;
 }
 
 const InputField: React.FC<InputFieldProps> = ({
@@ -62,9 +70,42 @@ const TextAreaField: React.FC<TextAreaFieldProps> = ({
 const NewProject: React.FC = () => {
   const [projectName, setProjectName] = useState("");
   const [projectDescription, setProjectDescription] = useState("");
+  const [userDirectory, setUserDirectory] = useState<string>("");
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
+
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [authLoading, setAuthLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    const token = localStorage.getItem("google_token");
+    if (token) {
+      try {
+        const decodedToken = jwtDecode<DecodedToken>(token);
+        const email = decodedToken.email;
+
+        // Format the email and set the dynamic directory
+        const formattedEmail = `ext_${email.replace(/[@.]/g, "_")}`;
+
+
+        // ------------------------------------ SET ROOT DIRECTORY HERE --------------------------------
+        const rootDirectory = "C:/Users/uclam/Downloads/";  
+
+
+        setUserDirectory(`${rootDirectory}${formattedEmail}`);
+        setIsAuthenticated(true);
+      } catch (error) {
+        console.error("Error decoding token:", error);
+        setIsAuthenticated(false);
+      }
+    }
+    else {
+      setIsAuthenticated(false);
+    }
+    setAuthLoading(false); 
+  }, []);
+
   const createProject = async (projectData: {
     name: string;
     description: string;
@@ -93,7 +134,7 @@ const NewProject: React.FC = () => {
       mutation.mutate({
         name: projectName,
         description: projectDescription,
-        directory: "C:\\Users\\uclam\\Downloads\\Lucas",
+        directory: userDirectory,
       });
     } catch (e: any) {
       setError(e.message);
@@ -103,6 +144,23 @@ const NewProject: React.FC = () => {
   const handleCancel = () => {
     navigate("/"); // Navigate to the home page
   };
+
+  if (authLoading) {
+    return (
+      <div className="my-56">
+        <div className="text-center">Loading authentication...</div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="my-56">
+        <div className="text-center">Please log in to view your projects.</div>
+      </div>
+    );
+  }
+
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">

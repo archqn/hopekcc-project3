@@ -69,8 +69,6 @@ import os
 import shutil
 from rest_framework.decorators import action
 
-directory = r"C:\Users\uclam\Downloads\Lucas"
-
 logger = logging.getLogger(__name__)
 
 
@@ -132,7 +130,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
         # If no directory is provided, use a default static directory for testing
         if not directory:
-            directory = r"C:\Users\uclam\Downloads\Lucas"  # Default directory
+            directory = "home/"  # Default directory
 
         try:
             # Check if the provided directory exists
@@ -235,6 +233,7 @@ def upload_folder(request):
     """
 
     project_name = request.POST.get('project')
+    directory = request.POST.get('directory')
     if not project_name:
         return JsonResponse({'status': 'error', 'message': 'Project name is required'}, status=400)
     
@@ -244,7 +243,8 @@ def upload_folder(request):
     
     files = request.FILES.getlist('files')
     paths = request.POST.getlist('paths')
-    if not files or not paths or len(files) != len(paths):
+    directory = request.POST.get('directory')
+    if not files or not paths or not directory or len(files) != len(paths):
         return JsonResponse({'status': 'error', 'message': 'No files provided'}, status=400)
     
 
@@ -274,6 +274,7 @@ def delete_folder(request):
         data = json.loads(request.body)
         project_name = data.get('project')
         folder_name = data.get('folder')
+        directory = data.get('directory')
     except json.JSONDecodeError:
         return JsonResponse({'status': 'error', 'message': 'Invalid JSON data'}, status=400)
 
@@ -281,8 +282,6 @@ def delete_folder(request):
     if not project_name or not folder_name:
         return JsonResponse({'status': 'error', 'message': 'Project and folder name are required'}, status=400)
 
-    # Construct the full folder path
-    directory = r"C:\Users\uclam\Downloads\Lucas"  # Update this to your root directory if needed
     project_path = os.path.join(directory, project_name)
     full_folder_path = os.path.join(project_path, folder_name)
 
@@ -310,6 +309,7 @@ def delete_project(request):
         # Parse the JSON body to get the project name
         data = json.loads(request.body)
         project_name = data.get('name')
+        base_directory = data.get("directory")
     except json.JSONDecodeError:
         return JsonResponse({'status': 'error', 'message': 'Invalid JSON data'}, status=400)
 
@@ -318,7 +318,6 @@ def delete_project(request):
         return JsonResponse({'status': 'error', 'message': 'Project name is required'}, status=400)
 
     # Construct the full project directory path (replace with your base directory)
-    base_directory = r"C:\Users\uclam\Downloads\Lucas"  # Replace with your actual base directory
     project_directory = os.path.join(base_directory, project_name)
 
     # Check if the project directory exists
