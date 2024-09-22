@@ -1,11 +1,12 @@
 import { GoogleLogin } from '@react-oauth/google';
 import { CredentialResponse } from '@react-oauth/google';
 
-const LoginButton = () => {
+interface LoginButtonProps {
+  onSuccess: (credentialResponse: CredentialResponse) => void;
+}
 
-  const onSuccess = (credentialResponse : CredentialResponse) => {
-    console.log('[Login Success] currentUser:', credentialResponse.credential);
-  };
+
+const LoginButton: React.FC<LoginButtonProps> = ({ onSuccess }) => {
 
   const onError = () => {
     console.log('[Login Failed]');
