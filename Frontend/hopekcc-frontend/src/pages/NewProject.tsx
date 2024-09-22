@@ -130,9 +130,11 @@ const NewProject: React.FC = () => {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    const sanitizedProjectName = projectName.replace(/[^a-zA-Z0-9-_]/g, "_");
+
     try {
       mutation.mutate({
-        name: projectName,
+        name: sanitizedProjectName,
         description: projectDescription,
         directory: userDirectory,
       });
