@@ -159,6 +159,7 @@ AUTH0_AUDIENCE = os.getenv('AUTH0_AUDIENCE')
 CORS_ALLOWED_ORIGINS = [
         "http://localhost:5173",  # Adjust as needed for your frontend
         "https://class4.hopekcc.org",  # Adjust as needed for your frontend
+        "https://class4.hopekcc.org:5173",
 ]
 
 

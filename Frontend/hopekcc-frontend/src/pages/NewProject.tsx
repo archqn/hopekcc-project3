@@ -113,7 +113,7 @@ const NewProject: React.FC = () => {
   }) => {
     // const token = await getAccessTokenSilently();
     const response = await axios.post(
-      "https://class4.hopekcc.org:5173/api/projects",
+      "https://class4.hopekcc.org/api/projects/",
       projectData
     );
     return response.data;

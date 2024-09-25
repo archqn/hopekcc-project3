@@ -66,7 +66,7 @@ const ProjectList = ({ projects, isLoading }: ProjectListProps) => {
       }
 
       try {
-        const response = await axios.delete("https://class4.hopekcc.org:5173/api/projects/delete/", {
+        const response = await axios.delete("https://class4.hopekcc.org/api/projects/delete/", {
           data: {
             name: name, 
             directory: userDirectory,
@@ -130,7 +130,7 @@ const Home = () => {
   const [userDirectory, setUserDirectory] = useState<string>("");
 
   const fetchProjects = async (): Promise<Project[]> => {
-    const response = await axios.get(`https://class4.hopekcc.org:5173/api/projects/list_dynamic/?directory=${userDirectory}`);
+    const response = await axios.get(`https://class4.hopekcc.org/api/projects/list_dynamic/?directory=${userDirectory}`);
     return Array.isArray(response.data) ? response.data : [];
   };
 

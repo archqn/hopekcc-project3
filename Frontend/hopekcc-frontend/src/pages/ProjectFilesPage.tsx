@@ -53,9 +53,9 @@ const ProjectFilesPage = () => {
   const fetchProjectFiles = async () => {
     if (!userDirectory || !name) return [];
 
-    const directoryPath = `${userDirectory}//${name}`;
+    const directoryPath = `${userDirectory}/${name}`;
     const response = await axios.get(
-      `http://class4.hopekcc.org:5173/api/projects/list_dynamic/?directory=${directoryPath}` 
+      `https://class4.hopekcc.org/api/projects/list_dynamic/?directory=${directoryPath}/` 
     );
     return response.data;
   };
@@ -70,7 +70,7 @@ const ProjectFilesPage = () => {
     }
 
     try {
-      const response = await axios.post("http://class4.hopekcc.org:5173/api/projects/delete_folder/", {
+      const response = await axios.post("http://class4.hopekcc.org/api/projects/delete_folder/", {
         project: name, 
         folder: folderName,  
         directory: userDirectory,
@@ -149,7 +149,7 @@ const ProjectFilesPage = () => {
     // Send the request to the backend
     try {
       const response = await axios.post(
-        "http://class4.hopekcc.org:5173/api/projects/upload_folder/",
+        "https://class4.hopekcc.org/api/projects/upload_folder/",
         formData,
         { headers: { "Content-Type": "multipart/form-data" } }
       );
