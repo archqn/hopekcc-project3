@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import fs from 'fs';
+// import fs from 'fs';
 // https://vitejs.dev/config/
 export default defineConfig({
   server: {
@@ -12,9 +12,10 @@ export default defineConfig({
     },
     https: {
 
-      key: fs.readFileSync('./key.pem'),  // Path to key.pem
-      cert: fs.readFileSync('./cert.pem') // Path to cert.pem
-
+   //   key: fs.readFileSync('./key.pem'),  // Path to key.pem
+   //   cert: fs.readFileSync('./cert.pem') // Path to cert.pem
+	key: './key.pem',
+	cert: './cert.pem'
     },
   },
   plugins: [react()],

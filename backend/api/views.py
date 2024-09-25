@@ -381,7 +381,6 @@ def delete_project(request):
 
 
 import subprocess
-
 @csrf_exempt
 def run_bash_script(request):
     if request.method == "POST":
@@ -395,20 +394,37 @@ def run_bash_script(request):
             # --------------------- CHANGE FOR LINUX ---------------------
             
             # bash_command = f"cd {path} && echo %cd% && dir"
-            bash_command = f"sudo fuser -k 8550/tcp"
-            result = subprocess.run(bash_command, shell=True, capture_output=True, text=True)
-
-            bash_command = f"cd {path} && pwd && ls && flet run --web --port 8550"
-            result = subprocess.run(bash_command, shell=True, capture_output=True, text=True)
            
 
+            bash_command = f"sudo fuser -k 8550/tcp"
+            result = subprocess.run(bash_command, shell=True, capture_output=True, text=True)
+           
+            bash_command = f"cd {path} && pwd "
+            result = subprocess.run(bash_command, shell=True, capture_output=True, text=True)
+           
+            p = (result.stdout.strip())
+           
             if result.returncode == 0:
-                return(JsonResponse({'output': result.stdout.strip()}))
+                bash_command = f"flet run --web --port 8550 {p}/"
+                print("command:")
+                print(bash_command)
+                process = subprocess.Popen(bash_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                print(f"Command is running in the background with PID: {process.pid}")
+
+
+                return JsonResponse({'output': 'running'}, status=200)
+
 
 
             else:
                 return JsonResponse({'error': result.stderr.strip()}, status=400)
             
+
+
+
+
+
+
         except json.JSONDecodeError:
             return JsonResponse({'error': 'Invalid JSON'}, status=400)
     else:

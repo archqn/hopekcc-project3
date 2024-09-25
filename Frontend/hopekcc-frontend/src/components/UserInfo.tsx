@@ -44,9 +44,10 @@ const UserInfo = ({ user }: { user: User }) => {
         <InfoItem icon={<Mail />}>{user.email}</InfoItem>
       </ul>
       <div className="p-4 bg-gray-100">
-        <LogoutButton onLogout= {() => {}} />
-           {/* empty function */ }
-        </LogoutButton>
+        <LogoutButton onLogout= {() => {}} >
+       
+
+	</LogoutButton>
       </div>
     </div>
   );
