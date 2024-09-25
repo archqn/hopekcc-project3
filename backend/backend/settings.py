@@ -154,13 +154,14 @@ AUTH0_CLIENT_ID = os.getenv('AUTH0_CLIENT_ID')
 AUTH0_CLIENT_SECRET = os.getenv('AUTH0_CLIENT_SECRET')
 
 AUTH0_AUDIENCE = os.getenv('AUTH0_AUDIENCE') 
-
+CORS_ALLOW_ALL_ORIGINS = True
 # CORS configuration
-CORS_ALLOWED_ORIGINS = [
-        "http://localhost:5173",  # Adjust as needed for your frontend
-        "https://class4.hopekcc.org",  # Adjust as needed for your frontend
-        "https://class4.hopekcc.org:5173",
-]
+#CORS_ALLOWED_ORIGINS = [
+ #       "http://localhost:5173",  # Adjust as needed for your frontend
+  #      "https://class4.hopekcc.org",  # Adjust as needed for your frontend
+   #     "https://class4.hopekcc.org:5173",
+
+    #    ]
 
 
 # Google Cloud Storage configuration

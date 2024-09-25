@@ -47,7 +47,6 @@ const ProjectFilesPage = () => {
 
   
 
-  const rootDirectory = "home/";
 
   // Fetch the files for the selected project using the project name
   const fetchProjectFiles = async () => {
@@ -70,7 +69,7 @@ const ProjectFilesPage = () => {
     }
 
     try {
-      const response = await axios.post("http://class4.hopekcc.org/api/projects/delete_folder/", {
+      const response = await axios.post("https://class4.hopekcc.org/api/projects/delete_folder/", {
         project: name, 
         folder: folderName,  
         directory: userDirectory,
@@ -87,6 +86,44 @@ const ProjectFilesPage = () => {
       alert("Error deleting folder.");
     }
   };
+
+
+
+  const handleDeploy = async () => {
+    try {
+      // Fetch the list of project files first to check for the 'main' subfolder
+      const directoryPath = `${userDirectory}/${name}`;
+      const filesResponse = await axios.get(
+        `https://class4.hopekcc.org/api/projects/list_dynamic/?directory=${directoryPath}`
+      );
+  
+      // Check if 'main' subfolder exists
+      const hasMainFolder = filesResponse.data.some(
+        (file: any) => file.is_directory && file.name === 'main'
+      );
+  
+      if (!hasMainFolder) {
+        alert("Deployment failed: A 'main' folder is required for deployment.");
+        return; // Stop further execution if 'main' folder doesn't exist
+      }
+
+      const deployPath = `${directoryPath}/main`;
+  
+      // Proceed with deployment if 'main' folder exists
+      const deployResponse = await axios.post(
+        "https://class4.hopekcc.org/api/projects/deploy/",
+        { path: deployPath },
+        { headers: { "Content-Type": "application/json" } }
+      );
+      console.log("Deployment Output:", deployResponse.data);
+      alert("Deployment output: " + deployResponse.data.output);
+    } catch (error) {
+      console.error("Error deploying project:", error);
+      alert("Deployment failed.");
+    }
+  };
+
+
 
   /*
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -180,10 +217,16 @@ const ProjectFilesPage = () => {
   if (isLoading) return <div>Loading files...</div>;
   if (isError) return <div>Error loading files.</div>;
 
+
   return (
     <div className="max-w-4xl mx-auto mt-4 p-6 bg-gray-200 rounded-lg shadow-md">
       <h2 className="text-2xl font-semibold text-gray-800 mb-4">{name} Contents</h2>
-      <button className="bg-[#1d769f] hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded mb-4">Deploy</button>
+      <button 
+        className="bg-[#1d769f] hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded mb-4"
+        onClick={handleDeploy}
+      >
+          Deploy
+      </button>
       <ul className="space-y-2 mb-4">
         {data.map((file: any, index: number) => (
           <li key={index}>
@@ -221,5 +264,4 @@ const ProjectFilesPage = () => {
     </div>
   );
 };
-
 export default ProjectFilesPage;

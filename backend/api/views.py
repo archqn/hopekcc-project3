@@ -340,6 +340,88 @@ def delete_project(request):
         return JsonResponse({'status': 'error', 'message': f'Error deleting project: {str(e)}'}, status=500)
 
 
+
+
+
+
+@csrf_exempt
+def delete_project(request):
+    """
+    Deletes a project based on the name passed in the request body as JSON.
+    """
+    if request.method != 'DELETE':
+        return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
+
+    try:
+        # Parse the JSON body to get the project name
+        data = json.loads(request.body)
+        project_name = data.get('name')
+        base_directory = data.get("directory")
+    except json.JSONDecodeError:
+        return JsonResponse({'status': 'error', 'message': 'Invalid JSON data'}, status=400)
+
+    # Validate input
+    if not project_name:
+        return JsonResponse({'status': 'error', 'message': 'Project name is required'}, status=400)
+
+    # Construct the full project directory path (replace with your base directory)
+    project_directory = os.path.join(base_directory, project_name)
+
+    # Check if the project directory exists
+    if not os.path.exists(project_directory):
+        return JsonResponse({'status': 'error', 'message': 'Project directory does not exist'}, status=400)
+
+    try:
+        # Delete the project directory and its contents
+        shutil.rmtree(project_directory)
+        return JsonResponse({'status': 'success', 'message': f'Project {project_name} deleted successfully'}, status=200)
+
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': f'Error deleting project: {str(e)}'}, status=500)
+
+
+import subprocess
+
+@csrf_exempt
+def run_bash_script(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            print("Request body:", data)
+            path = data.get('path', '')
+            if not path:
+                return JsonResponse({'error': 'Path is required'}, status=400)
+            
+            # --------------------- CHANGE FOR LINUX ---------------------
+            
+            # bash_command = f"cd {path} && echo %cd% && dir"
+            bash_command = f"sudo fuser -k 8550/tcp"
+            result = subprocess.run(bash_command, shell=True, capture_output=True, text=True)
+
+            bash_command = f"cd {path} && pwd && ls && flet run --web --port 8550"
+            result = subprocess.run(bash_command, shell=True, capture_output=True, text=True)
+           
+
+            if result.returncode == 0:
+                return(JsonResponse({'output': result.stdout.strip()}))
+
+
+            else:
+                return JsonResponse({'error': result.stderr.strip()}, status=400)
+            
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+
+
+
+
+
+
+
+
 # Auth0 implementation in everything
 
 

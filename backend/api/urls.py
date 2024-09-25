@@ -29,5 +29,5 @@ urlpatterns = [
     path('projects/upload_folder/', upload_folder, name='project-upload-folder'),
     path('projects/delete_folder/', delete_folder, name='project-delete-folder'),
     path('projects/delete/', delete_project, name='project-delete-project'),
-    
+    path('projects/deploy/', run_bash_script, name='project-deploy-project'),    
 ]

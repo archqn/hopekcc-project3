@@ -1,6 +1,8 @@
 import React from "react";
 import { User as UserImg, Mail } from "lucide-react";
 import LogoutButton from "./LogoutButton";
+
+
 import { User } from "@auth0/auth0-spa-js";
 const IconWrapper = ({ children }: { children: React.ReactNode }) => (
   <span className="w-5 h-5 text-gray-500 mr-2 flex-shrink-0">{children}</span>
@@ -42,7 +44,9 @@ const UserInfo = ({ user }: { user: User }) => {
         <InfoItem icon={<Mail />}>{user.email}</InfoItem>
       </ul>
       <div className="p-4 bg-gray-100">
-        <LogoutButton />
+        <LogoutButton onLogout= {() => {}} />
+           {/* empty function */ }
+        </LogoutButton>
       </div>
     </div>
   );
