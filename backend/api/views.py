@@ -385,16 +385,13 @@ import subprocess
 
 def run_bash_script(request):
     load_dotenv()
-# Get the email-port pairs from the environment variable
-    email_ports = os.getenv("EMAIL_PORTS").splitlines()
 
-# Create a dictionary to map emails to ports
-    email_port_dict = {}
-    for email_port in email_ports:
-        email, port = email_port.split(":")
-        email_port_dict[email.strip()] = port.strip()
-
-
+    email_to_port = {
+        key.split('_', 2)[2]: os.getenv(key) 
+        for key in os.environ.keys() 
+        if key.startswith('EMAIL_PORT_')
+    }
+    print(email_to_port)
 
 
 
@@ -410,8 +407,7 @@ def run_bash_script(request):
             # --------------------- CHANGE FOR LINUX ---------------------
             
             # bash_command = f"cd {path} && echo %cd% && dir"
-           
-            port = email_port_dict.get(email, "email not found")
+            port = email_to_port.get(email)
             bash_command = f"sudo fuser -k {port}/tcp"
             result = subprocess.run(bash_command, shell=True, capture_output=True, text=True)
            
