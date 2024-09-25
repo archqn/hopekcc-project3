@@ -381,6 +381,7 @@ def delete_project(request):
 
 from dotenv import load_dotenv
 import subprocess
+import time
 @csrf_exempt
 
 def run_bash_script(request):
@@ -423,8 +424,8 @@ def run_bash_script(request):
                 process = subprocess.Popen(bash_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
                 print(f"Command is running in the background with PID: {process.pid}")
 
-
-                return JsonResponse({'output': 'running'}, status=200)
+                time.sleep(1)
+                return JsonResponse({'output': 'running', 'port': port}, status=200)
 
 
 

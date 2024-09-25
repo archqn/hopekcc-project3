@@ -116,6 +116,26 @@ const ProjectFilesPage = () => {
         { path: deployPath, email: userEmail },
         { headers: { "Content-Type": "application/json" } }
       );
+
+      const dynamicPort = deployResponse.data.port;
+      console.log("Deployment Output:", deployResponse.data);
+
+
+      // Redirect to the new URL with the dynamic port
+      if (dynamicPort) {
+        window.open(`http://class4.hopekcc.org:${dynamicPort}/`);
+      } else {
+        alert("Deployment successful, but no port number returned.");
+      }
+
+
+
+
+
+
+
+
+
       console.log("Deployment Output:", deployResponse.data);
       alert("Deployment output: " + deployResponse.data.output);
     } catch (error) {
