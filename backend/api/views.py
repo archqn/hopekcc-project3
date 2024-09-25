@@ -379,24 +379,40 @@ def delete_project(request):
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': f'Error deleting project: {str(e)}'}, status=500)
 
-
+from dotenv import load_dotenv
 import subprocess
 @csrf_exempt
+
 def run_bash_script(request):
+    load_dotenv()
+# Get the email-port pairs from the environment variable
+    email_ports = os.getenv("EMAIL_PORTS").splitlines()
+
+# Create a dictionary to map emails to ports
+    email_port_dict = {}
+    for email_port in email_ports:
+        email, port = email_port.split(":")
+        email_port_dict[email.strip()] = port.strip()
+
+
+
+
+
     if request.method == "POST":
         try:
             data = json.loads(request.body)
             print("Request body:", data)
             path = data.get('path', '')
-            if not path:
-                return JsonResponse({'error': 'Path is required'}, status=400)
+            email= data.get('email', '')
+            if not path or not email:
+                return JsonResponse({'error': 'Path and email is required'}, status=400)
             
             # --------------------- CHANGE FOR LINUX ---------------------
             
             # bash_command = f"cd {path} && echo %cd% && dir"
            
-
-            bash_command = f"sudo fuser -k 8550/tcp"
+            port = email_port_dict.get(email, "email not found")
+            bash_command = f"sudo fuser -k {port}/tcp"
             result = subprocess.run(bash_command, shell=True, capture_output=True, text=True)
            
             bash_command = f"cd {path} && pwd "
@@ -405,7 +421,7 @@ def run_bash_script(request):
             p = (result.stdout.strip())
            
             if result.returncode == 0:
-                bash_command = f"flet run --web --port 8550 {p}/"
+                bash_command = f"flet run --web --port {port} {p}/"
                 print("command:")
                 print(bash_command)
                 process = subprocess.Popen(bash_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)

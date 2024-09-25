@@ -16,7 +16,7 @@ const ProjectFilesPage = () => {
   const [userDirectory, setUserDirectory] = useState<string>("");
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [authLoading, setAuthLoading] = useState<boolean>(true);
-
+  const [userEmail, setUserEmail] = useState<string>("");
   useEffect(() => {
     const token = localStorage.getItem("google_token");
     if (token) {
@@ -33,6 +33,7 @@ const ProjectFilesPage = () => {
 
 
         setUserDirectory(`${rootDirectory}${formattedEmail}`);
+	setUserEmail(`${email}`);
         setIsAuthenticated(true);
       } catch (error) {
         console.error("Error decoding token:", error);
@@ -112,7 +113,7 @@ const ProjectFilesPage = () => {
       // Proceed with deployment if 'main' folder exists
       const deployResponse = await axios.post(
         "https://class4.hopekcc.org/api/projects/deploy/",
-        { path: deployPath },
+        { path: deployPath, email: userEmail },
         { headers: { "Content-Type": "application/json" } }
       );
       console.log("Deployment Output:", deployResponse.data);
