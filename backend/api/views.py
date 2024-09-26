@@ -74,6 +74,7 @@ from django.db import transaction
 import logging
 import os
 import shutil
+import time
 from rest_framework.decorators import action
 
 logger = logging.getLogger(__name__)
@@ -299,6 +300,7 @@ def delete_folder(request):
     try:
         # Remove the folder and its contents
         shutil.rmtree(full_folder_path)
+        time.sleep(1)
         return JsonResponse({'status': 'success', 'message': 'Folder deleted successfully'}, status=200)
 
     except Exception as e:
@@ -334,6 +336,7 @@ def delete_project(request):
     try:
         # Delete the project directory and its contents
         shutil.rmtree(project_directory)
+        time.sleep(1)
         return JsonResponse({'status': 'success', 'message': f'Project {project_name} deleted successfully'}, status=200)
 
     except Exception as e:
@@ -381,7 +384,6 @@ def delete_project(request):
 
 from dotenv import load_dotenv
 import subprocess
-import time
 @csrf_exempt
 
 def run_bash_script(request):
@@ -419,12 +421,12 @@ def run_bash_script(request):
            
             if result.returncode == 0:
                 bash_command = f"flet run --web --port {port} {p}/"
-                print("command:")
-                print(bash_command)
+                #print("command:")
+                #print(bash_command)
                 process = subprocess.Popen(bash_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
                 print(f"Command is running in the background with PID: {process.pid}")
 
-                time.sleep(1)
+                time.sleep(2)
                 return JsonResponse({'output': 'running', 'port': port}, status=200)
 
 

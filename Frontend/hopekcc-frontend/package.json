@@ -2,6 +2,9 @@
   "name": "hopekcc-frontend",
   "private": true,
   "version": "0.0.0",
+
+  "homepage": "http://class4.hopekcc.org/classroom/live/",
+
   "type": "module",
   "scripts": {
     "dev": "vite",

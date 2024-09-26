@@ -14,7 +14,7 @@ function App() {
     <>
 
       <div className="flex flex-col min-h-screen">
-        <Router>
+        <Router basename="/classroom/live/dist">
           <NavBar />
           <main className="px-8" style={{ minHeight: "450px" }}>
             <Routes>
