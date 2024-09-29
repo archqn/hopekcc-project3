@@ -78,7 +78,9 @@ const ProjectFilesPage = () => {
 
       if (response.status === 200) {
         alert("Folder deleted successfully.");
-        window.location.reload(); // Refresh the page to update the folder list
+       
+	window.location.assign("https://class4.hopekcc.org/classroom/live/dist/");
+
       } else {
         console.error("Failed to delete folder:", response.data);
       }
@@ -212,7 +214,7 @@ const ProjectFilesPage = () => {
         { headers: { "Content-Type": "multipart/form-data" } }
       );
       console.log("Folder uploaded successfully:", response.data);
-      window.location.reload();
+      window.location.assign("https://class4.hopekcc.org/classroom/live/dist/");
     } catch (error) {
       console.error("Error uploading folder:", error);
     }
@@ -246,8 +248,20 @@ const ProjectFilesPage = () => {
         className="bg-[#1d769f] hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded mb-4"
         onClick={handleDeploy}
       >
-          Deploy
+        Deploy Flet
       </button>
+
+      <button 
+        className="bg-[#1d769f] hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded"
+        onClick={() => window.location.href = `https://class4.hopekcc.org/classroom/live/backend/home/${userDirectory}/${name}`}
+      >
+        View Files
+      </button>
+
+
+
+
+
       <ul className="space-y-2 mb-4">
         {data.map((file: any, index: number) => (
           <li key={index}>
