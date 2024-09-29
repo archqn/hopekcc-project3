@@ -253,7 +253,7 @@ const ProjectFilesPage = () => {
 
       <button 
         className="bg-[#1d769f] hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded"
-        onClick={() => window.location.href = `https://class4.hopekcc.org/classroom/live/backend/home/${userDirectory}/${name}`}
+        onClick={() => window.location.href = `https://class4.hopekcc.org/classroom/live/backend/${userDirectory}/${name}`}
       >
         View Files
       </button>
