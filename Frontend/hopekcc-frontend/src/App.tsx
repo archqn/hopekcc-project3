@@ -25,7 +25,7 @@ function App() {
               <Route path="/edit-project/:id" element={<ProjectEditorContainer />} /> // change
               <Route path="/monaco-edit-project" element={<MonacoEditProject />} /> // not needed
               
-              <Route path="*" element={<div>Page Not Found</div>} />
+              <Route path="*" element={<Home />} />
             </Routes>
           </main>
           <div className="flex-grow">
