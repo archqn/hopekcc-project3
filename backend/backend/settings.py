@@ -12,8 +12,6 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 from pathlib import Path
 import os
-import firebase_admin
-from firebase_admin import credentials
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -148,34 +146,8 @@ REST_FRAMEWORK = {
 }
 
 
-# Auth0 configuration
-AUTH0_DOMAIN = os.getenv('AUTH0_DOMAIN')
-AUTH0_CLIENT_ID = os.getenv('AUTH0_CLIENT_ID')
-AUTH0_CLIENT_SECRET = os.getenv('AUTH0_CLIENT_SECRET')
 
 AUTH0_AUDIENCE = os.getenv('AUTH0_AUDIENCE') 
 CORS_ALLOW_ALL_ORIGINS = True
-# CORS configuration
-#CORS_ALLOWED_ORIGINS = [
- #       "http://localhost:5173",  # Adjust as needed for your frontend
-  #      "https://class4.hopekcc.org",  # Adjust as needed for your frontend
-   #     "https://class4.hopekcc.org:5173",
-
-    #    ]
-
-
-# Google Cloud Storage configuration
-GS_BUCKET_NAME = os.getenv('GS_BUCKET_NAME')
-GOOGLE_APPLICATION_CREDENTIALS = os.path.join(BASE_DIR, os.getenv('GOOGLE_APPLICATION_CREDENTIALS'))
-
-# Firebase configuration
-FIREBASE_CREDENTIALS_PATH = os.getenv('FIREBASE_SERVICE_ACCOUNT')
-FIREBASE_STORAGE_BUCKET = os.getenv('FIREBASE_STORAGE_BUCKET')
-
-# Initialize Firebase Admin SDK
-cred = credentials.Certificate(os.path.join(BASE_DIR, FIREBASE_CREDENTIALS_PATH))
-firebase_admin.initialize_app(cred,  {
-    'storageBucket': FIREBASE_STORAGE_BUCKET
-})
 
 DEFAULT_FILE_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
